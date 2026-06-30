@@ -10,6 +10,11 @@
             darkMode: 'class'
         }
     </script>
+    <script>
+        const storedTheme = localStorage.getItem('fx_theme');
+        if (storedTheme === 'light') document.documentElement.classList.remove('dark');
+        else document.documentElement.classList.add('dark');
+    </script>
     <style>
         input[type="range"] { accent-color: #2563eb; }
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
@@ -19,65 +24,72 @@
         .dark .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 font-sans antialiased min-h-screen pb-16 transition-colors duration-200">
+<body class="bg-slate-100 text-slate-900 dark:bg-slate-950 dark:text-slate-100 font-sans antialiased min-h-screen pb-16 transition-colors duration-200">
 
     <div class="max-w-7xl mx-auto px-4 py-8">
-        <header class="mb-6 border-b border-slate-200 dark:border-slate-800 pb-6 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-            <div>
-                <div class="flex items-center gap-3">
-                    <h1 class="text-3xl font-black tracking-tight bg-gradient-to-r from-blue-600 via-indigo-600 to-emerald-600 dark:from-blue-400 dark:via-indigo-400 dark:to-emerald-400 bg-clip-text text-transparent">Fixed Income Risk Optimization Engine</h1>
-                    
-                    <button onclick="toggleTheme()" class="p-2 rounded-xl bg-slate-200 hover:bg-slate-300 dark:bg-slate-900 dark:hover:bg-slate-800 border border-slate-300 dark:border-slate-800 transition-all text-slate-700 dark:text-slate-300" title="Toggle Day/Night Mode">
+        <header class="mb-4">
+            <div class="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-4">
+                <div>
+                    <div class="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Fixed Income Workspace</div>
+                    <h1 class="text-2xl font-black tracking-tight text-slate-950 dark:text-white">Risk Optimization Engine</h1>
+                </div>
+                <div class="flex flex-wrap items-center gap-2">
+                    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-3 py-2 rounded-lg font-mono text-xs text-slate-600 dark:text-slate-400 shadow-sm flex flex-wrap gap-4">
+                        <div>Epoch <span class="text-slate-900 dark:text-white font-bold">Jun 30 2026</span></div>
+                        <div>Fed <span class="text-emerald-600 dark:text-emerald-400 font-bold">3.50-3.75%</span></div>
+                        <div>2Y <span class="text-blue-600 dark:text-blue-400 font-bold">4.11%</span></div>
+                    </div>
+                    <button onclick="toggleTheme()" class="h-9 w-9 inline-flex items-center justify-center rounded-lg bg-white hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 transition-all text-slate-700 dark:text-slate-300 shadow-sm" title="Toggle Day/Night Mode" aria-label="Toggle day or night mode">
                         <svg id="sunIcon" class="w-4 h-4 hidden dark:block" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.343l-.707-.707m12.728 12.728A9 9 0 115.52 5.52a9 9 0 0112.91 12.91z"></path></svg>
                         <svg id="moonIcon" class="w-4 h-4 block dark:hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
                     </button>
                 </div>
-                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Macro Verified Baselines &bull; Live Parameter Tuning &bull; Free Fiscal Data API Infrastructure Integration</p>
-            </div>
-            <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-4 py-2 rounded-xl font-mono text-xs text-slate-600 dark:text-slate-400 shadow-inner flex flex-wrap gap-4">
-                <div>Macro Epoch: <span class="text-slate-900 dark:text-white font-bold">June 30, 2026</span></div>
-                <div>Fed Funds: <span class="text-emerald-600 dark:text-emerald-400 font-bold">3.50% - 3.75%</span></div>
-                <div>2Y Treasury: <span class="text-blue-600 dark:text-blue-400 font-bold">4.11%</span></div>
             </div>
         </header>
 
-        <div class="mb-8 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-sm dark:shadow-xl">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-sm font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">Treasury Yield Curve Structure</h3>
-                <div id="curveStatusLabel" class="text-xs font-mono font-bold px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-950 text-emerald-600 dark:text-emerald-400 border border-slate-200 dark:border-slate-800">Normal Continuum</div>
-            </div>
-            <div class="relative w-full h-28 bg-slate-100/60 dark:bg-slate-950/60 rounded-xl p-4 flex items-center justify-center">
-                <svg id="yieldCurveSvg" class="w-full h-full overflow-visible" viewBox="0 0 1000 80" preserveAspectRatio="none"></svg>
+        <div class="sticky top-0 z-30 -mx-4 px-4 py-3 mb-5 bg-slate-100/95 dark:bg-slate-950/95 backdrop-blur border-y border-slate-200 dark:border-slate-800">
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-2 font-mono text-xs font-bold">
+                <button id="pageBtnMatrix" onclick="showAppPage('matrix')" class="py-2 text-center rounded-lg transition-all bg-blue-600 text-white">Matrix</button>
+                <button id="pageBtnSettings" onclick="showAppPage('settings')" class="py-2 text-center rounded-lg transition-all text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">Settings</button>
+                <button id="pageBtnFeeds" onclick="showAppPage('feeds')" class="py-2 text-center rounded-lg transition-all text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">Live Feeds</button>
+                <button id="pageBtnDiagnostics" onclick="showAppPage('diagnostics')" class="py-2 text-center rounded-lg transition-all text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">Diagnostics</button>
             </div>
         </div>
 
-        <div class="mb-6 bg-white dark:bg-slate-900 p-1 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row font-mono text-xs font-bold shadow-sm">
-            <button id="pageBtnMatrix" onclick="showAppPage('matrix')" class="flex-1 py-2 text-center rounded-lg transition-all bg-blue-600 text-white">Allocation Matrix</button>
-            <button id="pageBtnSettings" onclick="showAppPage('settings')" class="flex-1 py-2 text-center rounded-lg transition-all text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">Settings</button>
-            <button id="pageBtnFeeds" onclick="showAppPage('feeds')" class="flex-1 py-2 text-center rounded-lg transition-all text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">Live Data Feeds</button>
+        <div class="mb-5 grid grid-cols-1 lg:grid-cols-12 gap-4">
+            <div class="lg:col-span-8 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-lg shadow-sm">
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">Treasury Curve</h3>
+                    <div id="curveStatusLabel" class="text-xs font-mono font-bold px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-950 text-emerald-600 dark:text-emerald-400 border border-slate-200 dark:border-slate-800">Normal Continuum</div>
+                </div>
+                <div class="relative w-full h-24 bg-slate-50 dark:bg-slate-950 rounded-lg p-3 flex items-center justify-center">
+                    <svg id="yieldCurveSvg" class="w-full h-full overflow-visible" viewBox="0 0 1000 80" preserveAspectRatio="none"></svg>
+                </div>
+            </div>
+            <div class="lg:col-span-4 grid grid-cols-3 gap-2">
+                <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 rounded-lg shadow-sm">
+                    <span class="text-[10px] text-slate-400 font-bold uppercase">Live</span>
+                    <div id="summaryLiveAuctionSignal" class="font-mono text-lg font-black text-amber-600 dark:text-amber-400">Pending</div>
+                </div>
+                <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 rounded-lg shadow-sm">
+                    <span class="text-[10px] text-slate-400 font-bold uppercase">Gross</span>
+                    <div id="summaryGrossYield" class="font-mono text-lg font-black text-blue-600 dark:text-blue-400">--%</div>
+                </div>
+                <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 rounded-lg shadow-sm">
+                    <span class="text-[10px] text-slate-400 font-bold uppercase">Net</span>
+                    <div id="summaryNetYield" class="font-mono text-lg font-black text-emerald-600 dark:text-emerald-400">--%</div>
+                </div>
+            </div>
         </div>
 
         <section id="pageMatrix" class="space-y-6">
-                <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm dark:shadow-xl overflow-hidden">
+                <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-sm overflow-hidden">
                     <div class="px-6 py-4 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                         <div>
                             <h3 class="text-base font-bold text-slate-900 dark:text-white">Forensic Allocation Matrix & Yield Capture</h3>
-                            <p class="text-xs text-slate-500 dark:text-slate-400">Tweak any % weight input to manually lock custom bounds. Treasury rows can ingest live auction clearings.</p>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">Allocation decisions, manual weights, live auction overrides, and tax-adjusted yield impact.</p>
                         </div>
-                        <div class="flex gap-2">
-                            <div class="bg-white dark:bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 font-mono text-right shadow-sm">
-                                <span class="text-[10px] block text-slate-400 dark:text-slate-500 font-sans font-bold uppercase tracking-wider">Live Auction Input</span>
-                                <span id="summaryLiveAuctionSignal" class="text-amber-600 dark:text-amber-400 font-black text-sm">Pending</span>
-                            </div>
-                            <div class="bg-white dark:bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 font-mono text-right shadow-sm">
-                                <span class="text-[10px] block text-slate-400 dark:text-slate-500 font-sans font-bold uppercase tracking-wider">Blended Pre-Tax</span>
-                                <span id="summaryGrossYield" class="text-blue-600 dark:text-blue-400 font-black text-sm">--%</span>
-                            </div>
-                            <div class="bg-white dark:bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 font-mono text-right shadow-sm">
-                                <span class="text-[10px] block text-slate-400 dark:text-slate-500 font-sans font-bold uppercase tracking-wider">Net Realized</span>
-                                <span id="summaryNetYield" class="text-emerald-600 dark:text-emerald-400 font-black text-sm">--%</span>
-                            </div>
-                        </div>
+                        <button onclick="showAppPage('diagnostics')" class="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-[10px] font-mono font-bold rounded-lg transition-all border border-slate-300 dark:border-slate-700">View Diagnostics</button>
                     </div>
 
                     <div class="overflow-x-auto max-h-[400px] overflow-y-auto custom-scrollbar">
@@ -97,17 +109,10 @@
                     </div>
                 </div>
 
-                <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-sm dark:shadow-xl">
-                    <h3 class="text-sm font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-3 font-mono flex items-center gap-2">
-                        <span class="w-2 h-2 rounded-full bg-blue-500"></span>
-                        Rule Engine Forensic Execution Trace Logs
-                    </h3>
-                    <div id="auditLogContainer" class="bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-4 rounded-xl font-mono text-[11px] text-slate-600 dark:text-slate-400 h-28 overflow-y-auto space-y-1.5 custom-scrollbar"></div>
-                </div>
         </section>
 
         <section id="pageSettings" class="hidden grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <div id="panelCoreControls" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-sm dark:shadow-2xl space-y-6">
+                <div id="panelCoreControls" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-lg shadow-sm space-y-6">
                     <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-3">
                         <h2 class="text-xl font-bold text-slate-900 dark:text-white tracking-wide">Portfolio Parameters</h2>
                         <div class="flex gap-1.5">
@@ -118,12 +123,12 @@
                     
                     <div>
                         <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">Total Capital Allocation ($)</label>
-                        <input type="number" id="capital" value="1000000" step="50000" class="w-full bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2.5 font-mono text-emerald-600 dark:text-emerald-400 text-lg focus:outline-none focus:border-blue-500 font-bold">
+                        <input type="number" id="capital" value="1000000" step="50000" class="w-full bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-4 py-2.5 font-mono text-emerald-600 dark:text-emerald-400 text-lg focus:outline-none focus:border-blue-500 font-bold">
                     </div>
 
                     <div>
                         <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">Tax Jurisdiction Target</label>
-                        <select id="taxJurisdiction" class="w-full bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:border-blue-500 font-medium">
+                        <select id="taxJurisdiction" class="w-full bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-4 py-2.5 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:border-blue-500 font-medium">
                             <option value="us-high">US High Bracket (37% Fed + State Expat Blind)</option>
                             <option value="us-muni-optimized">US Muni-Preferred State Exemption Strategy</option>
                             <option value="cross-border-dtaa">US-India DTAA Optimized Investment Overlay</option>
@@ -149,14 +154,14 @@
                     <div>
                         <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">Risk Optimization Directive Profile</label>
                         <div class="grid grid-cols-3 gap-2">
-                            <button id="prof-safety" onclick="setProfile('safety')" class="border py-2.5 rounded-xl text-center text-xs font-mono transition-all font-bold border-blue-600 bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400">Capital Protection</button>
-                            <button id="prof-balanced" onclick="setProfile('balanced')" class="border py-2.5 rounded-xl text-center text-xs font-mono transition-all font-bold border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-950 text-slate-500 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-700">Balanced Income</button>
-                            <button id="prof-yield" onclick="setProfile('yield')" class="border py-2.5 rounded-xl text-center text-xs font-mono transition-all font-bold border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-950 text-slate-500 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-700">Yield Maxima</button>
+                            <button id="prof-safety" onclick="setProfile('safety')" class="border py-2.5 rounded-lg text-center text-xs font-mono transition-all font-bold border-blue-600 bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400">Capital Protection</button>
+                            <button id="prof-balanced" onclick="setProfile('balanced')" class="border py-2.5 rounded-lg text-center text-xs font-mono transition-all font-bold border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-950 text-slate-500 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-700">Balanced Income</button>
+                            <button id="prof-yield" onclick="setProfile('yield')" class="border py-2.5 rounded-lg text-center text-xs font-mono transition-all font-bold border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-950 text-slate-500 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-700">Yield Maxima</button>
                         </div>
                     </div>
                 </div>
 
-                <div id="panelYieldTweaker" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-sm dark:shadow-2xl space-y-4">
+                <div id="panelYieldTweaker" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-lg shadow-sm space-y-4">
                     <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-3">
                         <div class="flex items-center gap-2">
                             <h2 class="text-xl font-bold text-slate-900 dark:text-white tracking-wide">Yield Parameter Tuning</h2>
@@ -169,7 +174,7 @@
         </section>
 
         <section id="pageFeeds" class="hidden space-y-6">
-                <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm dark:shadow-xl overflow-hidden">
+                <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-sm overflow-hidden">
                     <div class="px-6 py-4 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
                         <div>
                             <h3 class="text-sm font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 font-mono flex items-center gap-2">
@@ -197,6 +202,21 @@
                         </div>
                     </div>
                 </div>
+        </section>
+
+        <section id="pageDiagnostics" class="hidden space-y-6">
+            <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-sm overflow-hidden">
+                <div class="px-6 py-4 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                    <div>
+                        <h3 class="text-base font-bold text-slate-900 dark:text-white">Rule Engine Diagnostics</h3>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">Decision trace, warning states, and live auction yield overrides.</p>
+                    </div>
+                    <div class="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400">Trace Output</div>
+                </div>
+                <div class="p-4">
+                    <div id="auditLogContainer" class="bg-slate-950 text-slate-200 border border-slate-800 p-4 rounded-lg font-mono text-[11px] h-80 overflow-y-auto space-y-1.5 custom-scrollbar"></div>
+                </div>
+            </div>
         </section>
     </div>
 
@@ -453,14 +473,14 @@
 
         function showAppPage(pageKey) {
             activeAppPage = pageKey;
-            ['matrix', 'settings', 'feeds'].forEach(key => {
+            ['matrix', 'settings', 'feeds', 'diagnostics'].forEach(key => {
                 const page = document.getElementById(`page${key.charAt(0).toUpperCase() + key.slice(1)}`);
                 const button = document.getElementById(`pageBtn${key.charAt(0).toUpperCase() + key.slice(1)}`);
                 const isActive = key === pageKey;
                 page.classList.toggle('hidden', !isActive);
                 button.className = isActive
-                    ? "flex-1 py-2 text-center rounded-lg transition-all bg-blue-600 text-white"
-                    : "flex-1 py-2 text-center rounded-lg transition-all text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white";
+                    ? "py-2 text-center rounded-lg transition-all bg-blue-600 text-white"
+                    : "py-2 text-center rounded-lg transition-all text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white";
             });
             saveEngineCache();
         }
@@ -513,9 +533,9 @@
             ['safety', 'balanced', 'yield'].forEach(p => {
                 const btn = document.getElementById(`prof-${p}`);
                 if (p === profileKey) {
-                    btn.className = "border py-2.5 rounded-xl text-center text-xs font-mono font-bold border-blue-600 bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400";
+                    btn.className = "border py-2.5 rounded-lg text-center text-xs font-mono font-bold border-blue-600 bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400";
                 } else {
-                    btn.className = "border py-2.5 rounded-xl text-center text-xs font-mono font-bold border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-500 dark:text-slate-400";
+                    btn.className = "border py-2.5 rounded-lg text-center text-xs font-mono font-bold border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-500 dark:text-slate-400";
                 }
             });
             saveEngineCache(); executeAttributionMatrix();
@@ -775,7 +795,12 @@
             setProfile(activeProfile);
         }
 
-        function resetGlobalDefaults() { localStorage.clear(); location.reload(); }
+        function resetGlobalDefaults() {
+            const theme = localStorage.getItem('fx_theme');
+            localStorage.clear();
+            if (theme) localStorage.setItem('fx_theme', theme);
+            location.reload();
+        }
     </script>
 </body>
 </html>
