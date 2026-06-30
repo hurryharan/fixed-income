@@ -130,7 +130,6 @@
                     <button onclick="exportMatrixCSV()" class="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-[10px] font-mono font-bold rounded-lg transition-all border border-slate-300 dark:border-slate-700 flex items-center gap-1">
                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg> Export CSV
                     </button>
-                    <button onclick="showAppPage('diagnostics')" class="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-[10px] font-mono font-bold rounded-lg transition-all border border-slate-300 dark:border-slate-700">View Diagnostics</button>
                 </div>
             </div>
             <!-- Column headers -->
@@ -864,13 +863,26 @@ function renderAccordion(weights, logicResults, totalCapital, jurisdiction, blen
         headerDiv.style.gridTemplateColumns = '2.5fr 2.5fr 0.9fr 1.2fr 1.2fr 1.2fr';
         headerDiv.onclick = () => toggleAccordion(catName);
         const isOpen = accordionOpenState[catName];
+        let maxYield = -1;
+        let maxYieldKey = null;
+        if (catWeight === 0 && keys.length > 0) {
+            keys.forEach(k => {
+                const y = getEffectiveYieldSignal(k).yield;
+                if(y > maxYield) { maxYield = y; maxYieldKey = k; }
+            });
+        }
+        let subText = `(${keys.length} assets)`;
+        if (catWeight === 0 && maxYieldKey) {
+            subText = `[Highest: ${ASSETS_MANIFEST[maxYieldKey].name} @ ${maxYield.toFixed(2)}%]`;
+        }
+
         headerDiv.innerHTML = `
             <div class="flex items-center gap-2.5 min-w-0 px-6">
                 <svg class="chevron-icon w-4 h-4 text-slate-400 flex-shrink-0 ${isOpen ? 'rotated' : ''}" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
                 </svg>
                 <span class="font-mono text-xs font-black tracking-widest uppercase text-slate-600 dark:text-slate-300 truncate">${catName}</span>
-                <span class="text-slate-400 dark:text-slate-500 hidden xl:block text-[9px] lowercase">(${keys.length} assets)</span>
+                <span class="text-slate-400 dark:text-slate-500 hidden xl:block text-[9px] ${catWeight === 0 ? '' : 'lowercase'}">${subText}</span>
             </div>
             <div class="px-4"></div>
             <div class="px-3 text-center text-slate-500 dark:text-slate-400 font-mono text-sm">${(catWeight*100).toFixed(1)}%</div>
@@ -881,7 +893,8 @@ function renderAccordion(weights, logicResults, totalCapital, jurisdiction, blen
         catDiv.appendChild(headerDiv);
 
         // Primary (selected) row — always visible
-        if (primaryKey) catDiv.appendChild(buildAssetRow(primaryKey, weights, logicResults, totalCapital, jurisdiction, true));
+        const isSoleSelection = selectedKeys.length === 1;
+        if (primaryKey) catDiv.appendChild(buildAssetRow(primaryKey, weights, logicResults, totalCapital, jurisdiction, true, isSoleSelection));
 
         // Other assets — accordion body
         const bodyDiv = document.createElement('div');
@@ -894,7 +907,7 @@ function renderAccordion(weights, logicResults, totalCapital, jurisdiction, blen
             sh.className = 'px-5 py-1.5 bg-slate-50 dark:bg-slate-950/60 border-t border-b border-slate-200/50 dark:border-slate-800/40';
             sh.innerHTML = `<span class="text-[9px] font-mono font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">Considered &amp; Not Selected (${otherKeys.length})</span>`;
             bodyDiv.appendChild(sh);
-            otherKeys.forEach(k => bodyDiv.appendChild(buildAssetRow(k, weights, logicResults, totalCapital, jurisdiction, false)));
+            otherKeys.forEach(k => bodyDiv.appendChild(buildAssetRow(k, weights, logicResults, totalCapital, jurisdiction, false, isSoleSelection)));
         }
 
         catDiv.appendChild(bodyDiv);
@@ -923,7 +936,7 @@ function renderAccordion(weights, logicResults, totalCapital, jurisdiction, blen
     accordion.appendChild(footerDiv);
 }
 
-function buildAssetRow(key, weights, logicResults, totalCapital, jurisdiction, isPrimary) {
+function buildAssetRow(key, weights, logicResults, totalCapital, jurisdiction, isPrimary, isSoleSelection = false) {
     const w = weights[key] || 0;
     const meta = ASSETS_MANIFEST[key];
     const ys = getEffectiveYieldSignal(key);
@@ -972,14 +985,17 @@ function buildAssetRow(key, weights, logicResults, totalCapital, jurisdiction, i
         </div>
         <div class="px-3 py-3 text-right font-mono text-sm ${isSelected ? 'text-slate-700 dark:text-slate-200' : 'text-slate-400 dark:text-slate-500'}">
             <span class="block">${raw.toFixed(2)}%</span>
-            <span class="block text-[10px] mt-0.5 opacity-70 ${isSelected ? '' : 'hidden'}">$${grossD.toLocaleString(undefined,{maximumFractionDigits:0})}</span>
+            <span class="block text-[10px] mt-0.5 opacity-70 ${isSelected && !isSoleSelection ? '' : 'hidden'}">$${grossD.toLocaleString(undefined,{maximumFractionDigits:0})}</span>
             ${ys.source === 'auction' ? '<span class="block text-[9px] text-amber-500 uppercase mt-0.5">Auction</span>' : ''}
         </div>
         <div class="px-3 py-3 text-right font-mono text-sm font-bold ${isSelected ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400 dark:text-slate-500'}">
             <span class="block">${net.toFixed(2)}%</span>
-            <span class="block text-[10px] mt-0.5 opacity-70 ${isSelected ? '' : 'hidden'}">$${netD.toLocaleString(undefined,{maximumFractionDigits:0})}</span>
+            <span class="block text-[10px] mt-0.5 opacity-70 ${isSelected && !isSoleSelection ? '' : 'hidden'}">$${netD.toLocaleString(undefined,{maximumFractionDigits:0})}</span>
         </div>
-        <div class="px-6 py-3 text-right font-mono font-bold text-sm ${isSelected ? 'text-slate-900 dark:text-white' : 'text-slate-400 dark:text-slate-500'}">$${alloc.toLocaleString(undefined,{maximumFractionDigits:0})}</div>
+        <div class="px-6 py-3 text-right font-mono font-bold text-sm ${isSelected ? 'text-slate-900 dark:text-white' : 'text-slate-400 dark:text-slate-500'}">
+            <span class="block ${isSelected && !isSoleSelection ? '' : 'hidden'}">$${alloc.toLocaleString(undefined,{maximumFractionDigits:0})}</span>
+            <span class="block ${isSelected && isSoleSelection ? '' : 'hidden'} text-[10px] opacity-70 text-slate-500 mt-0.5 italic">See category total</span>
+        </div>
     `;
     return row;
 }
