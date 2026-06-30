@@ -5,11 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fixed Income Forensic Matrix Engine</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class'
-        }
-    </script>
+    <script>tailwind.config = { darkMode: 'class' }</script>
     <script>
         const storedTheme = localStorage.getItem('fx_theme');
         if (storedTheme === 'light') document.documentElement.classList.remove('dark');
@@ -22,785 +18,1195 @@
         .dark .custom-scrollbar::-webkit-scrollbar-track { background: #020617; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         .dark .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; }
+
+        /* Accordion */
+        .accordion-body { max-height: 0; overflow: hidden; transition: max-height 0.3s cubic-bezier(0.4,0,0.2,1); }
+        .accordion-body.open { max-height: 3000px; }
+        .chevron-icon { transition: transform 0.22s ease; }
+        .chevron-icon.rotated { transform: rotate(180deg); }
+        .cat-row-header:hover { background: rgba(37,99,235,0.05); }
+
+        /* Selected border accent */
+        .selected-asset-row { border-left: 2px solid #2563eb; }
+        .dark .selected-asset-row { border-left: 2px solid #3b82f6; }
+
+        /* Status badge colors */
+        .badge-current  { background:#dbeafe; color:#1d4ed8; border:1px solid #bfdbfe; }
+        .badge-recmd    { background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0; }
+        .dark .badge-current { background:rgba(37,99,235,0.15); color:#93c5fd; border-color:rgba(37,99,235,0.3); }
+        .dark .badge-recmd   { background:rgba(16,185,129,0.12); color:#6ee7b7; border-color:rgba(16,185,129,0.25); }
+
+        @keyframes pulseGlow {
+            0%,100% { box-shadow: 0 0 0 0 rgba(16,185,129,0.4); }
+            50%      { box-shadow: 0 0 0 5px rgba(16,185,129,0); }
+        }
+        .live-pulse { animation: pulseGlow 2s ease-in-out infinite; }
     </style>
 </head>
 <body class="bg-slate-100 text-slate-900 dark:bg-slate-950 dark:text-slate-100 font-sans antialiased min-h-screen pb-16 transition-colors duration-200">
+<div class="max-w-7xl mx-auto px-4 py-8">
 
-    <div class="max-w-7xl mx-auto px-4 py-8">
-        <header class="mb-4">
-            <div class="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-4">
-                <div>
-                    <div class="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Fixed Income Workspace</div>
-                    <h1 class="text-2xl font-black tracking-tight text-slate-950 dark:text-white">Risk Optimization Engine</h1>
-                </div>
-                <div class="flex flex-wrap items-center gap-2">
-                    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-3 py-2 rounded-lg font-mono text-xs text-slate-600 dark:text-slate-400 shadow-sm flex flex-wrap gap-4">
-                        <div>Epoch <span class="text-slate-900 dark:text-white font-bold">Jun 30 2026</span></div>
-                        <div>Fed <span class="text-emerald-600 dark:text-emerald-400 font-bold">3.50-3.75%</span></div>
-                        <div>2Y <span class="text-blue-600 dark:text-blue-400 font-bold">4.11%</span></div>
-                    </div>
-                    <button onclick="toggleTheme()" class="h-9 w-9 inline-flex items-center justify-center rounded-lg bg-white hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 transition-all text-slate-700 dark:text-slate-300 shadow-sm" title="Toggle Day/Night Mode" aria-label="Toggle day or night mode">
-                        <svg id="sunIcon" class="w-4 h-4 hidden dark:block" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.343l-.707-.707m12.728 12.728A9 9 0 115.52 5.52a9 9 0 0112.91 12.91z"></path></svg>
-                        <svg id="moonIcon" class="w-4 h-4 block dark:hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
-                    </button>
-                </div>
+    <!-- ── HEADER ─────────────────────────────────────────────────── -->
+    <header class="mb-4">
+        <div class="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-4">
+            <div>
+                <div class="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Fixed Income Workspace</div>
+                <h1 class="text-2xl font-black tracking-tight text-slate-950 dark:text-white">Risk Optimization Engine</h1>
             </div>
-        </header>
-
-        <div class="sticky top-0 z-30 -mx-4 px-4 py-3 mb-5 bg-slate-100/95 dark:bg-slate-950/95 backdrop-blur border-y border-slate-200 dark:border-slate-800">
-            <div class="grid grid-cols-2 lg:grid-cols-4 gap-2 font-mono text-xs font-bold">
-                <button id="pageBtnMatrix" onclick="showAppPage('matrix')" class="py-2 text-center rounded-lg transition-all bg-blue-600 text-white">Matrix</button>
-                <button id="pageBtnSettings" onclick="showAppPage('settings')" class="py-2 text-center rounded-lg transition-all text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">Settings</button>
-                <button id="pageBtnFeeds" onclick="showAppPage('feeds')" class="py-2 text-center rounded-lg transition-all text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">Live Feeds</button>
-                <button id="pageBtnDiagnostics" onclick="showAppPage('diagnostics')" class="py-2 text-center rounded-lg transition-all text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">Diagnostics</button>
+            <div class="flex flex-wrap items-center gap-2">
+                <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-3 py-2 rounded-lg font-mono text-xs text-slate-600 dark:text-slate-400 shadow-sm flex flex-wrap gap-4">
+                    <div>Epoch <span class="text-slate-900 dark:text-white font-bold">Jun 30 2026</span></div>
+                    <div>Fed <span class="text-emerald-600 dark:text-emerald-400 font-bold">3.50–3.75%</span></div>
+                    <div>2Y <span class="text-blue-600 dark:text-blue-400 font-bold">4.11%</span></div>
+                </div>
+                <button onclick="toggleTheme()" class="h-9 w-9 inline-flex items-center justify-center rounded-lg bg-white hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 transition-all text-slate-700 dark:text-slate-300 shadow-sm" title="Toggle theme" aria-label="Toggle day or night mode">
+                    <svg id="sunIcon" class="w-4 h-4 hidden dark:block" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.343l-.707-.707m12.728 12.728A9 9 0 115.52 5.52a9 9 0 0112.91 12.91z"/></svg>
+                    <svg id="moonIcon" class="w-4 h-4 block dark:hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+                </button>
             </div>
         </div>
+    </header>
 
-        <div class="mb-5 grid grid-cols-1 lg:grid-cols-12 gap-4">
-            <div class="lg:col-span-8 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-lg shadow-sm">
-                <div class="flex justify-between items-center mb-3">
-                    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">Treasury Curve</h3>
-                    <div id="curveStatusLabel" class="text-xs font-mono font-bold px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-950 text-emerald-600 dark:text-emerald-400 border border-slate-200 dark:border-slate-800">Normal Continuum</div>
-                </div>
-                <div class="relative w-full h-24 bg-slate-50 dark:bg-slate-950 rounded-lg p-3 flex items-center justify-center">
-                    <svg id="yieldCurveSvg" class="w-full h-full overflow-visible" viewBox="0 0 1000 80" preserveAspectRatio="none"></svg>
-                </div>
-            </div>
-            <div class="lg:col-span-4 grid grid-cols-3 gap-2">
-                <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 rounded-lg shadow-sm">
-                    <span class="text-[10px] text-slate-400 font-bold uppercase">Live</span>
-                    <div id="summaryLiveAuctionSignal" class="font-mono text-lg font-black text-amber-600 dark:text-amber-400">Pending</div>
-                </div>
-                <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 rounded-lg shadow-sm">
-                    <span class="text-[10px] text-slate-400 font-bold uppercase">Gross</span>
-                    <div id="summaryGrossYield" class="font-mono text-lg font-black text-blue-600 dark:text-blue-400">--%</div>
-                </div>
-                <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 rounded-lg shadow-sm">
-                    <span class="text-[10px] text-slate-400 font-bold uppercase">Net</span>
-                    <div id="summaryNetYield" class="font-mono text-lg font-black text-emerald-600 dark:text-emerald-400">--%</div>
-                </div>
-            </div>
+    <!-- ── NAV ────────────────────────────────────────────────────── -->
+    <div class="sticky top-0 z-30 -mx-4 px-4 py-3 mb-5 bg-slate-100/95 dark:bg-slate-950/95 backdrop-blur border-y border-slate-200 dark:border-slate-800">
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-2 font-mono text-xs font-bold">
+            <button id="pageBtnMatrix"      onclick="showAppPage('matrix')"      class="py-2 text-center rounded-lg transition-all bg-blue-600 text-white">Matrix</button>
+            <button id="pageBtnSettings"    onclick="showAppPage('settings')"    class="py-2 text-center rounded-lg transition-all text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">Settings</button>
+            <button id="pageBtnFeeds"       onclick="showAppPage('feeds')"       class="py-2 text-center rounded-lg transition-all text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">Live Feeds</button>
+            <button id="pageBtnDiagnostics" onclick="showAppPage('diagnostics')" class="py-2 text-center rounded-lg transition-all text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">Diagnostics</button>
         </div>
-
-        <section id="pageMatrix" class="space-y-6">
-                <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-sm overflow-hidden">
-                    <div class="px-6 py-4 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-                        <div>
-                            <h3 class="text-base font-bold text-slate-900 dark:text-white">Forensic Allocation Matrix & Yield Capture</h3>
-                            <p class="text-xs text-slate-500 dark:text-slate-400">Allocation decisions, manual weights, live auction overrides, and tax-adjusted yield impact.</p>
-                        </div>
-                        <button onclick="showAppPage('diagnostics')" class="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-[10px] font-mono font-bold rounded-lg transition-all border border-slate-300 dark:border-slate-700">View Diagnostics</button>
-                    </div>
-
-                    <div class="overflow-x-auto max-h-[400px] overflow-y-auto custom-scrollbar">
-                        <table class="w-full text-left border-collapse">
-                            <thead class="sticky top-0 bg-slate-100 dark:bg-slate-950 font-mono text-[10px] font-bold tracking-wider uppercase border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 z-10 shadow-sm">
-                                <tr>
-                                    <th class="px-6 py-3 w-[28%]">Asset Classification & Wrapper</th>
-                                    <th class="px-4 py-3 w-[34%]">Selection / Rejection Forensic Logic</th>
-                                    <th class="px-3 py-3 text-center w-[13%]">Weight Override</th>
-                                    <th class="px-3 py-3 text-center w-[8%]">Base Yld</th>
-                                    <th class="px-3 py-3 text-center w-[8%]">Net Yld</th>
-                                    <th class="px-6 py-3 text-right w-[11%]">Allocated</th>
-                                </tr>
-                            </thead>
-                            <tbody id="allocationTableBody" class="divide-y divide-slate-200 dark:divide-slate-800/60 text-xs"></tbody>
-                        </table>
-                    </div>
-                </div>
-
-        </section>
-
-        <section id="pageSettings" class="hidden grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <div id="panelCoreControls" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-lg shadow-sm space-y-6">
-                    <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-3">
-                        <h2 class="text-xl font-bold text-slate-900 dark:text-white tracking-wide">Portfolio Parameters</h2>
-                        <div class="flex gap-1.5">
-                            <button onclick="resetWeightOverrides()" class="text-[10px] font-mono text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 border border-slate-200 dark:border-slate-800 hover:border-blue-300 dark:hover:border-blue-900 px-2 py-0.5 rounded transition-all">Reset Weights</button>
-                            <button onclick="resetGlobalDefaults()" class="text-[10px] font-mono text-slate-500 hover:text-amber-600 dark:hover:text-amber-400 border border-slate-200 dark:border-slate-800 hover:border-amber-300 dark:hover:border-amber-900 px-2 py-0.5 rounded transition-all">Clear All</button>
-                        </div>
-                    </div>
-                    
-                    <div>
-                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">Total Capital Allocation ($)</label>
-                        <input type="number" id="capital" value="1000000" step="50000" class="w-full bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-4 py-2.5 font-mono text-emerald-600 dark:text-emerald-400 text-lg focus:outline-none focus:border-blue-500 font-bold">
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">Tax Jurisdiction Target</label>
-                        <select id="taxJurisdiction" class="w-full bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-4 py-2.5 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:border-blue-500 font-medium">
-                            <option value="us-high">US High Bracket (37% Fed + State Expat Blind)</option>
-                            <option value="us-muni-optimized">US Muni-Preferred State Exemption Strategy</option>
-                            <option value="cross-border-dtaa">US-India DTAA Optimized Investment Overlay</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <div class="flex justify-between items-center mb-2">
-                            <label class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Target Horizon Span</label>
-                            <span id="horizonVal" class="text-blue-600 dark:text-blue-400 font-mono font-bold text-xs px-2.5 py-0.5 rounded-full border border-blue-200 dark:border-blue-800">12 Months</span>
-                        </div>
-                        <input type="range" id="horizon" min="1" max="36" value="12" class="w-full h-1.5 bg-slate-200 dark:bg-slate-800 rounded-lg cursor-pointer">
-                    </div>
-
-                    <div>
-                        <div class="flex justify-between items-center mb-2">
-                            <label class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Immediate Liquidity Target</label>
-                            <span id="liquidityVal" class="text-emerald-600 dark:text-emerald-400 font-mono font-bold text-xs px-2.5 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">20%</span>
-                        </div>
-                        <input type="range" id="liquidityTarget" min="0" max="100" value="20" class="w-full h-1.5 bg-slate-200 dark:bg-slate-800 rounded-lg cursor-pointer">
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">Risk Optimization Directive Profile</label>
-                        <div class="grid grid-cols-3 gap-2">
-                            <button id="prof-safety" onclick="setProfile('safety')" class="border py-2.5 rounded-lg text-center text-xs font-mono transition-all font-bold border-blue-600 bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400">Capital Protection</button>
-                            <button id="prof-balanced" onclick="setProfile('balanced')" class="border py-2.5 rounded-lg text-center text-xs font-mono transition-all font-bold border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-950 text-slate-500 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-700">Balanced Income</button>
-                            <button id="prof-yield" onclick="setProfile('yield')" class="border py-2.5 rounded-lg text-center text-xs font-mono transition-all font-bold border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-950 text-slate-500 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-700">Yield Maxima</button>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="panelYieldTweaker" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-lg shadow-sm space-y-4">
-                    <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-3">
-                        <div class="flex items-center gap-2">
-                            <h2 class="text-xl font-bold text-slate-900 dark:text-white tracking-wide">Yield Parameter Tuning</h2>
-                            <span id="tweakIndicatorCount" class="hidden bg-amber-500 text-slate-950 text-[10px] px-1.5 py-0.1 rounded-full font-black">0</span>
-                        </div>
-                        <button onclick="resetYieldTweaks()" class="text-[10px] font-mono text-amber-600 dark:text-amber-500 hover:text-amber-700 dark:hover:text-amber-400 border border-amber-200 dark:border-amber-900/40 hover:border-amber-300 dark:hover:border-amber-700 px-2 py-1 rounded transition-all">Reset Baselines</button>
-                    </div>
-                    <div class="space-y-3 max-h-[620px] overflow-y-auto pr-1 custom-scrollbar" id="yieldTweakerInputsList"></div>
-                </div>
-        </section>
-
-        <section id="pageFeeds" class="hidden space-y-6">
-                <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-sm overflow-hidden">
-                    <div class="px-6 py-4 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
-                        <div>
-                            <h3 class="text-sm font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 font-mono flex items-center gap-2">
-                                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                                Live Treasury Auction Pipeline & Results
-                            </h3>
-                            <p class="text-[11px] text-slate-400 dark:text-slate-500 font-sans mt-0.5">Real-time macro data streams from the Bureau of the Fiscal Service API</p>
-                        </div>
-                        <button onclick="fetchLiveTreasuryAuctions()" class="px-3 py-1 bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-[10px] font-mono font-bold rounded-lg transition-all border border-slate-300 dark:border-slate-700">
-                            Refresh Feed
-                        </button>
-                    </div>
-                    <div class="p-4 bg-slate-100/40 dark:bg-slate-950/40 border-b border-slate-200 dark:border-slate-800 grid grid-cols-2 gap-4 text-xs">
-                        <div>
-                            <span class="block text-[10px] font-mono font-bold uppercase text-slate-400 dark:text-slate-500 mb-2">Upcoming Auction Deadlines</span>
-                            <div id="upcomingAuctionsContainer" class="space-y-2 max-h-48 overflow-y-auto custom-scrollbar font-mono text-[11px]">
-                                <div class="text-slate-400 animate-pulse">Querying federal schedules...</div>
-                            </div>
-                        </div>
-                        <div>
-                            <span class="block text-[10px] font-mono font-bold uppercase text-slate-400 dark:text-slate-500 mb-2">Recent Cleared Market Prints</span>
-                            <div id="recentAuctionsContainer" class="space-y-2 max-h-48 overflow-y-auto custom-scrollbar font-mono text-[11px]">
-                                <div class="text-slate-400 animate-pulse">Fetching high yield clearings...</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-        </section>
-
-        <section id="pageDiagnostics" class="hidden space-y-6">
-            <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-sm overflow-hidden">
-                <div class="px-6 py-4 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-                    <div>
-                        <h3 class="text-base font-bold text-slate-900 dark:text-white">Rule Engine Diagnostics</h3>
-                        <p class="text-xs text-slate-500 dark:text-slate-400">Decision trace, warning states, and live auction yield overrides.</p>
-                    </div>
-                    <div class="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400">Trace Output</div>
-                </div>
-                <div class="p-4">
-                    <div id="auditLogContainer" class="bg-slate-950 text-slate-200 border border-slate-800 p-4 rounded-lg font-mono text-[11px] h-80 overflow-y-auto space-y-1.5 custom-scrollbar"></div>
-                </div>
-            </div>
-        </section>
     </div>
 
-    <div id="forensicModal" class="fixed inset-0 bg-slate-950/60 dark:bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
-        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 max-w-xl w-full rounded-2xl shadow-2xl p-6 relative space-y-4">
-            <div class="border-b border-slate-200 dark:border-slate-800 pb-3">
-                <span id="modalCategoryBadge" class="bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-400 text-[10px] font-mono font-bold px-2 py-0.5 rounded-full border border-blue-200 dark:border-blue-800">Government Sweep</span>
-                <h3 id="modalProductName" class="text-xl font-black text-slate-900 dark:text-white mt-2">Asset Name</h3>
-                <p id="modalAssetClass" class="text-xs text-slate-500 dark:text-slate-400 font-mono mt-0.5">Asset Class Wrapper</p>
+    <!-- ── TREASURY CURVE ─────────────────────────────────────────── -->
+    <div class="mb-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm overflow-hidden">
+        <div class="px-5 py-3 border-b border-slate-200 dark:border-slate-800 flex flex-wrap justify-between items-center gap-3">
+            <div class="flex items-center gap-3">
+                <h3 class="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">Treasury Yield Curve</h3>
+                <div id="curveStatusLabel" class="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60">Normal Continuum</div>
             </div>
-            <div>
-                <h4 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Functional Architecture & Mechanics</h4>
-                <p id="modalDesc" class="text-slate-700 dark:text-slate-300 text-xs leading-relaxed font-sans"></p>
-            </div>
-            <div>
-                <h4 class="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 mb-1">Forensic Attribution & Structural Risks</h4>
-                <p id="modalRisk" class="text-slate-700 dark:text-slate-300 text-xs leading-relaxed font-sans"></p>
-            </div>
-            <div class="grid grid-cols-3 gap-2 bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-200 dark:border-slate-800 font-mono text-center text-xs">
-                <div>
-                    <span class="text-[9px] text-slate-400 dark:text-slate-500 block">EXPENSE RATIO</span>
-                    <span id="modalExpense" class="text-slate-700 dark:text-slate-300 font-bold"></span>
-                </div>
-                <div>
-                    <span class="text-[9px] text-slate-400 dark:text-slate-500 block">TAX ARCHITECTURE</span>
-                    <span id="modalTax" class="text-slate-700 dark:text-slate-300 font-bold"></span>
-                </div>
-                <div>
-                    <span class="text-[9px] text-slate-400 dark:text-slate-500 block">DURATION</span>
-                    <span id="modalDuration" class="text-slate-700 dark:text-slate-300 font-bold"></span>
+            <div class="flex items-center gap-4 font-mono text-xs">
+                <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-blue-500"></span><span class="text-slate-500 dark:text-slate-400">Yield Curve</span></div>
+                <div class="flex items-center gap-1.5"><span class="block w-5 border-t-2 border-dashed border-slate-400 dark:border-slate-500"></span><span class="text-slate-500 dark:text-slate-400">Fed Funds</span></div>
+                <div id="liveAuctionBadge" class="hidden items-center gap-1.5 live-pulse bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 rounded-full px-2 py-0.5">
+                    <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                    <span class="text-amber-700 dark:text-amber-400 text-[10px] font-bold">Live Auction</span>
                 </div>
             </div>
-            <div class="flex justify-end pt-2">
-                <button onclick="closeForensicModal()" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-white font-mono text-xs font-bold rounded-xl transition-all">Close Diagnostic Window</button>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-5 divide-y lg:divide-y-0 lg:divide-x divide-slate-200 dark:divide-slate-800">
+            <div class="lg:col-span-4 px-4 pt-3 pb-2">
+                <canvas id="yieldCurveCanvas" class="w-full" height="130"></canvas>
+            </div>
+            <div class="flex flex-row lg:flex-col divide-x lg:divide-x-0 lg:divide-y divide-slate-200 dark:divide-slate-800">
+                <div class="flex-1 p-4">
+                    <span class="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider block mb-1">Live Signal</span>
+                    <div id="summaryLiveAuctionSignal" class="font-mono text-base font-black text-amber-600 dark:text-amber-400">Pending</div>
+                    <span class="text-[9px] text-slate-400 block mt-0.5">Auction Override</span>
+                </div>
+                <div class="flex-1 p-4">
+                    <span class="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider block mb-1">Gross Yield</span>
+                    <div id="summaryGrossYield" class="font-mono text-base font-black text-blue-600 dark:text-blue-400">--%</div>
+                    <span class="text-[9px] text-slate-400 block mt-0.5">Pre-Tax Blended</span>
+                </div>
+                <div class="flex-1 p-4">
+                    <span class="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider block mb-1">Net Yield</span>
+                    <div id="summaryNetYield" class="font-mono text-base font-black text-emerald-600 dark:text-emerald-400">--%</div>
+                    <span class="text-[9px] text-slate-400 block mt-0.5">After-Tax Adjusted</span>
+                </div>
             </div>
         </div>
     </div>
 
-    <script>
-        const BASE_YIELDS_DEFAULT = {
-            "vmfxx": 4.15, "vusxx": 4.10, "swvxx": 4.05, "spaxx": 3.80, "sgov": 4.18, "bil": 4.12, 
-            "shv": 4.10, "scho": 3.78, "vgsh": 3.77, "shy": 3.82, "t_bills_short": 4.14, "t_bills_long": 4.11, "note_2y": 4.11, 
-            "note_5y": 4.22, "tlt": 4.45, "tip": 3.95, "wip": 2.75, "bnd": 4.50, "vtg": 4.38, "lqd": 5.22, 
-            "vcit": 5.15, "vteb": 3.35, "mub": 3.38, "vwalx": 3.55, "pff": 6.25, "arcc": 10.60, "main": 6.85, "yieldstreet": 7.62
-        };
+    <!-- ── MATRIX PAGE ────────────────────────────────────────────── -->
+    <section id="pageMatrix" class="space-y-6">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm overflow-hidden">
+            <div class="px-6 py-4 bg-slate-50 dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                <div>
+                    <h3 class="text-base font-bold text-slate-900 dark:text-white">Forensic Allocation Matrix &amp; Yield Capture</h3>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Each category shows the selected asset. Expand ▾ to inspect alternatives considered &amp; not chosen.</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <div class="text-[10px] font-mono text-slate-400 dark:text-slate-500 flex items-center gap-1.5">
+                        <span class="inline-block w-2 h-2 rounded-full bg-blue-500"></span>Current
+                        <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 ml-2"></span>Recommended
+                    </div>
+                    <button onclick="showAppPage('diagnostics')" class="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-[10px] font-mono font-bold rounded-lg transition-all border border-slate-300 dark:border-slate-700">View Diagnostics</button>
+                </div>
+            </div>
+            <!-- Column headers -->
+            <div class="hidden sm:grid font-mono text-[10px] font-bold tracking-wider uppercase text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800" style="grid-template-columns:2fr 2.6fr 1fr 0.7fr 0.7fr 1fr;">
+                <div class="px-6 py-2.5">Asset / Instrument</div>
+                <div class="px-4 py-2.5">Forensic Selection Logic</div>
+                <div class="px-3 py-2.5 text-center">Weight Override</div>
+                <div class="px-3 py-2.5 text-center">Base Yld</div>
+                <div class="px-3 py-2.5 text-center">Net Yld</div>
+                <div class="px-6 py-2.5 text-right">Allocated</div>
+            </div>
+            <div id="allocationAccordion" class="divide-y divide-slate-200 dark:divide-slate-800/50"></div>
+        </div>
+    </section>
 
-        const ASSETS_MANIFEST = {
-            "vmfxx": { name: "Vanguard Federal Money Market (VMFXX)", class: "Government Cash Sweep", duration: 0.08, expense: 0.11, tax: "Fully Taxable", desc: "Settlement sweep holding US government agency obligations.", risk: "Inflation risk. Minimal structural variation." },
-            "vusxx": { name: "Vanguard Treasury Money Market (VUSXX)", class: "State-Exempt Cash Sweep", duration: 0.08, expense: 0.09, tax: "State/Local Tax-Free", desc: "Maintains strict sovereign structural filter making payouts state-tax immune.", risk: "Capped yields relative to high corporate risk alternatives." },
-            "swvxx": { name: "Schwab Value Advantage Money Fund (SWVXX)", class: "Prime Cash Sweep", duration: 0.10, expense: 0.34, tax: "Fully Taxable", desc: "Invests in high-tier institutional commercial paper.", risk: "Private sector credit spread contamination under extreme market distress." },
-            "spaxx": { name: "Fidelity Government Money Market (SPAXX)", class: "Government Cash Sweep", duration: 0.08, expense: 0.42, tax: "Fully Taxable", desc: "Default-style Fidelity government money market allocation for immediate brokerage liquidity.", risk: "Yield resets quickly with the front end and carries a materially higher expense drag than the Treasury-only sweep options." },
-            "sgov": { name: "iShares Ultra-Short Treasury ETF (SGOV)", class: "Ultra-Short Treasury ETF", duration: 0.12, expense: 0.09, tax: "State/Local Tax-Free", desc: "Exchange-traded rolling pool of super-short 0-3 month US Treasury bills.", risk: "Reinvestment execution friction during unexpected rate cut regimes." },
-            "bil": { name: "SPDR Bloomberg 1-3 Month T-Bill ETF (BIL)", class: "Ultra-Short Treasury ETF", duration: 0.15, expense: 0.13, tax: "State/Local Tax-Free", desc: "Tracks investment performance of short-dated sovereign zero-coupon options.", risk: "Tracks lower end of capital preservation maturity sequence." },
-            "shv": { name: "iShares Short Treasury Bond ETF (SHV)", class: "Short Treasury ETF", duration: 0.40, expense: 0.15, tax: "State/Local Tax-Free", desc: "Maturity allocations locked into targeted 1-12 month US Treasury instruments.", risk: "Minor near-term structural capital fluctuations on sudden rate spikes." },
-            "scho": { name: "Schwab Short-Term U.S. Treasury ETF (SCHO)", class: "Short Treasury ETF", duration: 1.85, expense: 0.03, tax: "State/Local Tax-Free", desc: "Low-cost 1-3 year Treasury ETF used as a short-duration sovereign ladder proxy.", risk: "Duration extends beyond cash and bill ladders, creating modest mark-to-market exposure when front-end rates jump." },
-            "vgsh": { name: "Vanguard Short-Term Treasury ETF (VGSH)", class: "Short Treasury ETF", duration: 1.86, expense: 0.04, tax: "State/Local Tax-Free", desc: "Vanguard 1-3 year Treasury ETF for low-cost sovereign carry past the cash-bill segment.", risk: "Short but non-zero duration creates NAV movement that direct held-to-maturity bills avoid." },
-            "shy": { name: "iShares 1-3 Year Treasury Bond ETF (SHY)", class: "Short Treasury ETF", duration: 1.84, expense: 0.15, tax: "State/Local Tax-Free", desc: "Liquid 1-3 year Treasury benchmark ETF used for short/intermediate curve exposure.", risk: "Higher expense ratio than SCHO/VGSH and still sensitive to 1-3 year curve repricing." },
-            "t_bills_short": { name: "Individual Short Treasuries (4-13W T-Bills)", class: "Direct Sovereign Bills", duration: 0.18, expense: 0.00, tax: "State/Local Tax-Free", desc: "Direct allocations via TreasuryDirect or secondary secondary trading blocks.", risk: "Zero management expenses, but locks tracking control parameters directly." },
-            "t_bills_long": { name: "Individual Long Treasuries (26-52W T-Bills)", class: "Direct Sovereign Bills", duration: 0.75, expense: 0.00, tax: "State/Local Tax-Free", desc: "Locks structural absolute rate guarantees across intermediate annual spans.", risk: "Subject to capital execution lockups for duration of instrument duration." },
-            "note_2y": { name: "U.S. 2-Year Treasury Note", class: "Sovereign Bond Anchor", duration: 1.92, expense: 0.00, tax: "State/Local Tax-Free", desc: "The foundational curve anchor for medium-term capital commitments.", risk: "Direct duration exposures create mark-to-market pricing variability risks." },
-            "note_5y": { name: "U.S. 5-Year Treasury Note", class: "Sovereign Bond Anchor", duration: 4.50, expense: 0.00, tax: "State/Local Tax-Free", desc: "Intermediate benchmark sovereign tracking vehicle.", risk: "Enhanced pricing metrics sensitivity to shifted inflation baseline profiles." },
-            "tlt": { name: "iShares 20+ Year Treasury Bond ETF (TLT)", class: "Long-Duration Sovereign ETF", duration: 16.40, expense: 0.15, tax: "State/Local Tax-Free", desc: "Pure liquid play tracking macro interest velocity trends across extreme horizons.", risk: "Severe structural duration vulnerability. Convexity losses on hawkish pivots." },
-            "tip": { name: "iShares TIPS Bond ETF (TIP)", class: "Inflation-Linked Sovereign ETF", duration: 6.50, expense: 0.18, tax: "Fully Taxable", desc: "Broad U.S. Treasury Inflation-Protected Securities ETF for CPI-linked principal adjustment exposure.", risk: "Real-rate duration can dominate inflation accruals during sharp increases in real yields." },
-            "wip": { name: "SPDR FTSE International Government Inflation-Protected Bond ETF (WIP)", class: "Inflation-Linked Sovereign ETF", duration: 8.20, expense: 0.50, tax: "Fully Taxable", desc: "Non-U.S. inflation-linked sovereign bond ETF adding global CPI and currency-linked exposure.", risk: "Adds foreign sovereign, currency, and higher expense risks beyond domestic TIPS exposure." },
-            "bnd": { name: "Vanguard Total Bond Market ETF (BND)", class: "Broad Agg Fixed Income", duration: 6.10, expense: 0.03, tax: "Blended Taxation", desc: "Massive combined multi-sector matrix tracing government, corporate, and MBS obligations.", risk: "Blends disparate internal risk variables together blindly inside index logic." },
-            "vtg": { name: "Vanguard Total Treasury ETF (VTG)", class: "Broad Sovereign ETF", duration: 5.80, expense: 0.03, tax: "State/Local Tax-Free", desc: "Blended index tracing long, intermediate, and short sovereign durations.", risk: "Exposure across all points of the matrix without custom parameter adjustments." },
-            "lqd": { name: "iShares IG Corporate ETF (LQD)", class: "High-Quality Corporate Credit", duration: 8.30, expense: 0.14, tax: "Fully Taxable", desc: "Liquid pool of blue-chip institutional credit exposures matching premium ratings.", risk: "Credit spread extension risk coupled with significant internal structural duration values." },
-            "vcit": { name: "iShares Intermediate Corporate (VCIT)", class: "High-Quality Corporate Credit", duration: 6.20, expense: 0.04, tax: "Fully Taxable", desc: "Targeted intermediate investment grade corporate issuance index tracking vehicle.", risk: "Vulnerable to systemic corporate margin structural contractions." },
-            "vteb": { name: "Vanguard Tax-Exempt Bond ETF (VTEB)", class: "Sovereign Municipal Debt", duration: 5.90, expense: 0.05, tax: "Fed Tax-Exempt", desc: "Diversified institutional selection of municipal bonds issued by local states.", risk: "Underperforms if general federal income tax structures scale downward." },
-            "mub": { name: "iShares National Muni Bond ETF (MUB)", class: "Sovereign Municipal Debt", duration: 6.00, expense: 0.07, tax: "Fed Tax-Exempt", desc: "Broad national framework index focusing on tax-insulated municipal fixed income.", risk: "Subject to regional infrastructure budgetary and legislative revisions." },
-            "vwalx": { name: "Vanguard High-Yield Tax-Exempt Fund Admiral (VWALX)", class: "High-Yield Municipal Debt", duration: 6.30, expense: 0.09, tax: "Fed Tax-Exempt", desc: "Actively managed national municipal bond fund emphasizing higher-yielding tax-exempt credits.", risk: "Adds lower-quality municipal credit and liquidity risk relative to broad investment-grade muni ETFs." },
-            "pff": { name: "iShares Preferred and Income Securities ETF (PFF)", class: "Preferred Equity Income", duration: 3.70, expense: 0.46, tax: "Fully Taxable", desc: "Preferred securities ETF offering hybrid bank/financial income exposure between bonds and equity.", risk: "Subordinated capital structure, call risk, and financial-sector concentration can impair defensive behavior." },
-            "arcc": { name: "Ares Capital Corp (ARCC) BDC", class: "Alternative Floating Credit", duration: 0.40, expense: 1.90, tax: "Fully Taxable", desc: "Largest liquid Business Development Corporation issuing senior floating corporate debt.", risk: "Equity wrapper exposure risks, underlying default parameters on private business debt." },
-            "main": { name: "Main Street Capital Corp (MAIN)", class: "Alternative Floating Credit", duration: 0.50, expense: 1.80, tax: "Fully Taxable", desc: "Internally managed elite investment framework target specializing in lower middle markets.", risk: "Trades at a heavy premium to net asset value allocations." },
-            "yieldstreet": { name: "Yieldstreet Alternative Income Fund", class: "Structured Private Credit", duration: 2.10, expense: 1.50, tax: "Fully Taxable", desc: "Structured platform allocation locking alternative debt structures via non-correlated strategies.", risk: "Substantial structure illiquidity constraints. Lacks secondary liquid exchange platforms." }
-        };
+    <!-- ── SETTINGS PAGE ─────────────────────────────────────────── -->
+    <section id="pageSettings" class="hidden grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-lg shadow-sm space-y-6">
+            <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-3">
+                <h2 class="text-xl font-bold text-slate-900 dark:text-white">Portfolio Parameters</h2>
+                <div class="flex gap-1.5">
+                    <button onclick="resetWeightOverrides()" class="text-[10px] font-mono text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 border border-slate-200 dark:border-slate-800 px-2 py-0.5 rounded transition-all">Reset Weights</button>
+                    <button onclick="resetGlobalDefaults()" class="text-[10px] font-mono text-slate-500 hover:text-amber-600 dark:hover:text-amber-400 border border-slate-200 dark:border-slate-800 px-2 py-0.5 rounded transition-all">Clear All</button>
+                </div>
+            </div>
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">Total Capital Allocation ($)</label>
+                <input type="number" id="capital" value="1000000" step="50000" class="w-full bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-4 py-2.5 font-mono text-emerald-600 dark:text-emerald-400 text-lg focus:outline-none focus:border-blue-500 font-bold">
+            </div>
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">Tax Jurisdiction Target</label>
+                <select id="taxJurisdiction" class="w-full bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-4 py-2.5 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:border-blue-500 font-medium">
+                    <option value="us-high">US High Bracket (37% Fed + State)</option>
+                    <option value="us-muni-optimized">US Muni-Preferred State Exemption Strategy</option>
+                    <option value="cross-border-dtaa">US-India DTAA Optimized Investment Overlay</option>
+                </select>
+            </div>
+            <div>
+                <div class="flex justify-between items-center mb-2">
+                    <label class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Target Horizon Span</label>
+                    <span id="horizonVal" class="text-blue-600 dark:text-blue-400 font-mono font-bold text-xs px-2.5 py-0.5 rounded-full border border-blue-200 dark:border-blue-800">12 Months</span>
+                </div>
+                <input type="range" id="horizon" min="1" max="60" value="12" class="w-full h-1.5 bg-slate-200 dark:bg-slate-800 rounded-lg cursor-pointer">
+            </div>
+            <div>
+                <div class="flex justify-between items-center mb-2">
+                    <label class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Immediate Liquidity Target</label>
+                    <span id="liquidityVal" class="text-emerald-600 dark:text-emerald-400 font-mono font-bold text-xs px-2.5 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">20%</span>
+                </div>
+                <input type="range" id="liquidityTarget" min="0" max="100" value="20" class="w-full h-1.5 bg-slate-200 dark:bg-slate-800 rounded-lg cursor-pointer">
+            </div>
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">Risk Optimization Profile</label>
+                <div class="grid grid-cols-3 gap-2">
+                    <button id="prof-safety"   onclick="setProfile('safety')"   class="border py-2.5 rounded-lg text-center text-xs font-mono transition-all font-bold border-blue-600 bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400">Capital Protection</button>
+                    <button id="prof-balanced" onclick="setProfile('balanced')" class="border py-2.5 rounded-lg text-center text-xs font-mono transition-all font-bold border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-950 text-slate-500 dark:text-slate-400">Balanced Income</button>
+                    <button id="prof-yield"    onclick="setProfile('yield')"    class="border py-2.5 rounded-lg text-center text-xs font-mono transition-all font-bold border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-950 text-slate-500 dark:text-slate-400">Yield Maxima</button>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-lg shadow-sm space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-3">
+                <div class="flex items-center gap-2">
+                    <h2 class="text-xl font-bold text-slate-900 dark:text-white">Yield Parameter Tuning</h2>
+                    <span id="tweakIndicatorCount" class="hidden bg-amber-500 text-slate-950 text-[10px] px-1.5 rounded-full font-black">0</span>
+                </div>
+                <button onclick="resetYieldTweaks()" class="text-[10px] font-mono text-amber-600 dark:text-amber-500 border border-amber-200 dark:border-amber-900/40 px-2 py-1 rounded transition-all">Reset Baselines</button>
+            </div>
+            <div class="space-y-3 max-h-[640px] overflow-y-auto pr-1 custom-scrollbar" id="yieldTweakerInputsList"></div>
+        </div>
+    </section>
 
-        const STRUCTURAL_CATEGORIES = {
-            "Cash & Settlement Liquidity": ["vmfxx", "vusxx", "swvxx", "spaxx"],
-            "Short-Term Bills & Sovereign Wrappers": ["sgov", "bil", "shv", "scho", "vgsh", "shy", "t_bills_short", "t_bills_long"],
-            "Core Treasury Notes & Macro Bonds": ["note_2y", "note_5y", "tlt", "vtg"],
-            "Inflation-Linked Sovereigns": ["tip", "wip"],
-            "Investment Grade Corporate Debt": ["bnd", "lqd", "vcit"],
-            "Tax-Insulated Municipal Infrastructure": ["vteb", "mub", "vwalx"],
-            "Preferred & Hybrid Income": ["pff"],
-            "Private Credit & Alternative Income Assets": ["arcc", "main", "yieldstreet"]
-        };
+    <!-- ── FEEDS PAGE ─────────────────────────────────────────────── -->
+    <section id="pageFeeds" class="hidden space-y-6">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-sm overflow-hidden">
+            <div class="px-6 py-4 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
+                <div>
+                    <h3 class="text-sm font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 font-mono flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                        Live Treasury Auction Pipeline &amp; Results
+                    </h3>
+                    <p class="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">Real-time macro data from the Bureau of the Fiscal Service API</p>
+                </div>
+                <button onclick="fetchLiveTreasuryAuctions()" class="px-3 py-1 bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-[10px] font-mono font-bold rounded-lg transition-all border border-slate-300 dark:border-slate-700">Refresh Feed</button>
+            </div>
+            <div class="p-4 bg-slate-100/40 dark:bg-slate-950/40 grid grid-cols-2 gap-4 text-xs">
+                <div>
+                    <span class="block text-[10px] font-mono font-bold uppercase text-slate-400 dark:text-slate-500 mb-2">Upcoming Auction Deadlines</span>
+                    <div id="upcomingAuctionsContainer" class="space-y-2 max-h-48 overflow-y-auto custom-scrollbar font-mono text-[11px]">
+                        <div class="text-slate-400 animate-pulse">Querying federal schedules...</div>
+                    </div>
+                </div>
+                <div>
+                    <span class="block text-[10px] font-mono font-bold uppercase text-slate-400 dark:text-slate-500 mb-2">Recent Cleared Market Prints</span>
+                    <div id="recentAuctionsContainer" class="space-y-2 max-h-48 overflow-y-auto custom-scrollbar font-mono text-[11px]">
+                        <div class="text-slate-400 animate-pulse">Fetching high yield clearings...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
 
-        let activeAppPage = 'matrix';
-        let activeProfile = 'safety';
-        let baseYields = { ...BASE_YIELDS_DEFAULT };
-        let manualWeights = {};
-        let liveAuctionSignals = {};
+    <!-- ── DIAGNOSTICS PAGE ───────────────────────────────────────── -->
+    <section id="pageDiagnostics" class="hidden space-y-6">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-sm overflow-hidden">
+            <div class="px-6 py-4 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
+                <div>
+                    <h3 class="text-base font-bold text-slate-900 dark:text-white">Rule Engine Diagnostics</h3>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Decision trace, warning states, and live auction overrides.</p>
+                </div>
+                <div class="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400">Trace Output</div>
+            </div>
+            <div class="p-4">
+                <div id="auditLogContainer" class="bg-slate-950 text-slate-200 border border-slate-800 p-4 rounded-lg font-mono text-[11px] h-80 overflow-y-auto space-y-1 custom-scrollbar"></div>
+            </div>
+        </div>
+    </section>
+</div>
 
-        window.addEventListener('DOMContentLoaded', () => {
-            loadEngineCache();
-            renderYieldTweakerUI();
-            showAppPage(activeAppPage);
-            executeAttributionMatrix();
-            fetchLiveTreasuryAuctions(); // Initialize API Call
-            
-            document.getElementById('capital').addEventListener('input', () => { saveEngineCache(); executeAttributionMatrix(); });
-            document.getElementById('taxJurisdiction').addEventListener('change', () => { saveEngineCache(); executeAttributionMatrix(); });
-            document.getElementById('horizon').addEventListener('input', (e) => {
-                document.getElementById('horizonVal').innerText = `${e.target.value} Months`;
-                saveEngineCache(); executeAttributionMatrix();
-            });
-            document.getElementById('liquidityTarget').addEventListener('input', (e) => {
-                document.getElementById('liquidityVal').innerText = `${e.target.value}%`;
-                saveEngineCache(); executeAttributionMatrix();
-            });
+<!-- ── FORENSIC MODAL ────────────────────────────────────────────── -->
+<div id="forensicModal" class="fixed inset-0 bg-slate-950/60 dark:bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 max-w-xl w-full rounded-2xl shadow-2xl p-6 space-y-4">
+        <div class="border-b border-slate-200 dark:border-slate-800 pb-3">
+            <span id="modalCategoryBadge" class="bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-400 text-[10px] font-mono font-bold px-2 py-0.5 rounded-full border border-blue-200 dark:border-blue-800"></span>
+            <h3 id="modalProductName" class="text-xl font-black text-slate-900 dark:text-white mt-2"></h3>
+            <p id="modalAssetClass" class="text-xs text-slate-500 dark:text-slate-400 font-mono mt-0.5"></p>
+        </div>
+        <div>
+            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Functional Architecture &amp; Mechanics</h4>
+            <p id="modalDesc" class="text-slate-700 dark:text-slate-300 text-xs leading-relaxed"></p>
+        </div>
+        <div>
+            <h4 class="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 mb-1">Forensic Attribution &amp; Structural Risks</h4>
+            <p id="modalRisk" class="text-slate-700 dark:text-slate-300 text-xs leading-relaxed"></p>
+        </div>
+        <div class="grid grid-cols-3 gap-2 bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-200 dark:border-slate-800 font-mono text-center text-xs">
+            <div><span class="text-[9px] text-slate-400 dark:text-slate-500 block">EXPENSE RATIO</span><span id="modalExpense" class="text-slate-700 dark:text-slate-300 font-bold"></span></div>
+            <div><span class="text-[9px] text-slate-400 dark:text-slate-500 block">TAX TREATMENT</span><span id="modalTax" class="text-slate-700 dark:text-slate-300 font-bold"></span></div>
+            <div><span class="text-[9px] text-slate-400 dark:text-slate-500 block">DURATION</span><span id="modalDuration" class="text-slate-700 dark:text-slate-300 font-bold"></span></div>
+        </div>
+        <div class="flex justify-end pt-1">
+            <button onclick="closeForensicModal()" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-white font-mono text-xs font-bold rounded-xl transition-all">Close</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════
+// DATA LAYER — BASE YIELDS
+// ═══════════════════════════════════════════════════════════════════
+const BASE_YIELDS_DEFAULT = {
+    // Cash & Equivalents
+    "hysa":          4.50,
+    "vmfxx":         4.15,
+    "vusxx":         4.10,
+    "swvxx":         4.05,
+    "spaxx":         3.80,
+    // CDs
+    "brokered_cd":   4.65,
+    // Bank Deposits
+    "gift_city_fd":  5.20,
+    // Direct Treasuries
+    "t_bills_short": 4.14,
+    "t_bills_long":  4.11,
+    "note_2y":       4.11,
+    "note_5y":       4.22,
+    "tokenized_tb":  4.12,
+    // Treasury ETFs
+    "sgov":          4.18,
+    "bil":           4.12,
+    "shv":           4.10,
+    "scho":          3.78,
+    "vgsh":          3.77,
+    "shy":           3.82,
+    "vgit":          4.25,
+    "ief":           4.30,
+    "tlt":           4.45,
+    "vtg":           4.38,
+    // Municipal Bonds
+    "vwalx":         3.55,
+    "vteb":          3.35,
+    "mub":           3.38,
+    // Ultra-Short & Short Corp
+    "jpst":          4.80,
+    "vcsh":          4.90,
+    "igsb":          5.00,
+    "spsb":          4.95,
+    // IG Corporate
+    "vcit":          5.15,
+    "lqd":           5.22,
+    "vtc":           5.40,
+    // Aggregate Bond Funds
+    "bnd":           4.50,
+    "agg":           4.48,
+    "schz":          4.47,
+    // Emerging Market Bonds
+    "vwob":          6.00,
+    "emb":           6.20,
+    // International Developed
+    "bndx":          3.50,
+    "bwx":           2.80,
+    "wip":           2.75,
+    // TIPS
+    "tip":           3.95,
+    "schp":          3.85,
+    "vtip":          4.10,
+    // Floating Rate
+    "flot":          4.90,
+    "flrn":          4.85,
+    // Preferred
+    "pff":           6.25,
+    // Fixed Annuity
+    "fixed_annuity": 4.80,
+    // Private Credit
+    "yieldstreet":   7.62,
+    // BDCs
+    "arcc":          10.60,
+    "main":          6.85,
+    // Real Estate
+    "dst_re":        5.50,
+};
+
+// ═══════════════════════════════════════════════════════════════════
+// ASSET MANIFEST
+// statusTag: "current" | "recommended"
+// ═══════════════════════════════════════════════════════════════════
+const ASSETS_MANIFEST = {
+    // ── Cash & Cash Equivalents ──────────────────────────────────
+    "hysa":        { name:"High-Yield Savings Account (HYSA)",                            cat:"Cash & Cash Equivalents",         statusTag:"current",      duration:0.00,  expense:0.00, tax:"Fully Taxable",         desc:"FDIC-insured deposit account earning competitive short-term rates. Immediate liquidity with no market risk.", risk:"Yield resets daily with Fed policy. No capital appreciation potential." },
+    "vmfxx":       { name:"Vanguard Federal Money Market (VMFXX)",                         cat:"Cash & Cash Equivalents",         statusTag:"current",      duration:0.08,  expense:0.11, tax:"Fully Taxable",         desc:"Settlement sweep holding US government agency obligations.", risk:"Inflation risk. 0.11% ER is manageable but VUSXX is cheaper for taxable sweep." },
+    "vusxx":       { name:"Vanguard Treasury Money Market (VUSXX)",                        cat:"Cash & Cash Equivalents",         statusTag:"current",      duration:0.08,  expense:0.09, tax:"State/Local Tax-Free",  desc:"Treasury-only money market with state/local tax exemption on income.", risk:"Slightly lower gross yield vs prime MMFs but wins on net yield in high-bracket states." },
+    "swvxx":       { name:"Schwab Value Advantage Money Fund (SWVXX)",                     cat:"Cash & Cash Equivalents",         statusTag:"current",      duration:0.10,  expense:0.34, tax:"Fully Taxable",         desc:"Prime money market investing in high-quality commercial paper.", risk:"Non-government credit exposure adds marginal risk; 0.34% ER erodes yield advantage." },
+    "spaxx":       { name:"Fidelity Government Money Market (SPAXX)",                      cat:"Cash & Cash Equivalents",         statusTag:"current",      duration:0.08,  expense:0.42, tax:"Fully Taxable",         desc:"Default Fidelity brokerage settlement sweep in government money market.", risk:"0.42% ER is the highest in the peer group — materially drag vs VMFXX/VUSXX." },
+    // ── Certificates of Deposit ──────────────────────────────────
+    "brokered_cd": { name:"Brokered CDs (9–13 Month)",                                    cat:"Certificates of Deposit (CDs)",   statusTag:"current",      duration:0.90,  expense:0.00, tax:"Fully Taxable",         desc:"FDIC-insured brokered CDs purchased at auction via brokerage. Typically callable-free in the 9-13M sweet spot.", risk:"Early sale at secondary market prices may incur a discount. No capital appreciation." },
+    // ── Bank Deposits ─────────────────────────────────────────────
+    "gift_city_fd": { name:"GIFT City USD Fixed Deposits (IBUs)",                          cat:"Bank Deposits",                   statusTag:"current",      duration:1.00,  expense:0.00, tax:"India GIFT City Exempt", desc:"USD-denominated fixed deposits at International Banking Units in India's GIFT City. Exempt from Indian income tax under IFSC regime.", risk:"Regulatory risk tied to GIFT City IFSC framework. Repatriation logistics. Limited to US-India cross-border mandates." },
+    // ── U.S. Treasuries — Direct ─────────────────────────────────
+    "t_bills_short": { name:"Short T-Bills (4–13 Week)",                                  cat:"U.S. Treasuries — Direct",        statusTag:"current",      duration:0.18,  expense:0.00, tax:"State/Local Tax-Free",  desc:"Direct 4-13 week T-bill purchases via TreasuryDirect or brokerage secondary market. Zero ER, full sovereign backing.", risk:"Maturity lock — no intraday liquidity. Reinvestment risk at each rollover." },
+    "t_bills_long":  { name:"Long T-Bills (26–52 Week)",                                  cat:"U.S. Treasuries — Direct",        statusTag:"current",      duration:0.75,  expense:0.00, tax:"State/Local Tax-Free",  desc:"26-52 week direct T-bill ladder locking in the current rate for up to one year at zero cost.", risk:"Capital committed until maturity. Rate-lock is a feature in a cutting cycle, liability in a hiking cycle." },
+    "note_2y":       { name:"U.S. 2-Year Treasury Note",                                  cat:"U.S. Treasuries — Direct",        statusTag:"current",      duration:1.92,  expense:0.00, tax:"State/Local Tax-Free",  desc:"The primary medium-term sovereign anchor. Zero expense, state-tax exempt, held to maturity eliminates NAV risk.", risk:"Mark-to-market losses if sold before maturity during rate spikes." },
+    "note_5y":       { name:"U.S. 5-Year Treasury Note",                                  cat:"U.S. Treasuries — Direct",        statusTag:"current",      duration:4.50,  expense:0.00, tax:"State/Local Tax-Free",  desc:"Intermediate curve anchor capturing the positive slope above the 2Y point.", risk:"Rate sensitivity increases materially. Duration commitment requires a 5Y investment horizon." },
+    "tokenized_tb":  { name:"Tokenized T-Bills (Ondo Finance / OUSG)",                    cat:"U.S. Treasuries — Direct",        statusTag:"current",      duration:0.08,  expense:0.15, tax:"State/Local Tax-Free",  desc:"On-chain tokenized short-term Treasury exposure via Ondo Finance's OUSG product. Near-T-bill yield with blockchain settlement.", risk:"Smart contract and regulatory risk layered on top of T-bill credit risk. Nascent product structure." },
+    // ── Treasury ETFs ─────────────────────────────────────────────
+    "sgov":  { name:"iShares Ultra-Short Treasury ETF (SGOV)",       cat:"Treasury ETFs", statusTag:"recommended", duration:0.12,  expense:0.09, tax:"State/Local Tax-Free", desc:"Rolling 0-3 month T-bill pool ETF. Lowest ER in the ultra-short category at 0.09%.", risk:"Reinvestment friction during surprise rate cuts." },
+    "bil":   { name:"SPDR 1-3 Month T-Bill ETF (BIL)",               cat:"Treasury ETFs", statusTag:"recommended", duration:0.15,  expense:0.13, tax:"State/Local Tax-Free", desc:"Tracks 1-3 month T-bill benchmark. Highly liquid with tight spreads.", risk:"0.13% ER is 4bps above SGOV for functionally equivalent exposure." },
+    "shv":   { name:"iShares Short Treasury Bond ETF (SHV)",          cat:"Treasury ETFs", statusTag:"recommended", duration:0.40,  expense:0.15, tax:"State/Local Tax-Free", desc:"Covers 1-12 month Treasury instruments, bridging cash and bill categories.", risk:"0.15% ER — most expensive in the short-Treasury ETF group." },
+    "scho":  { name:"Schwab Short-Term U.S. Treasury ETF (SCHO)",     cat:"Treasury ETFs", statusTag:"recommended", duration:1.85,  expense:0.03, tax:"State/Local Tax-Free", desc:"1-3 year Treasury ETF at the lowest-in-class 0.03% ER.", risk:"Modest duration extends beyond T-bills, creating NAV sensitivity to rate moves." },
+    "vgsh":  { name:"Vanguard Short-Term Treasury ETF (VGSH)",        cat:"Treasury ETFs", statusTag:"recommended", duration:1.86,  expense:0.04, tax:"State/Local Tax-Free", desc:"Vanguard's 1-3 year Treasury ladder ETF at 0.04% ER.", risk:"Nearly identical to SCHO; 1bp ER disadvantage but slightly broader index coverage." },
+    "shy":   { name:"iShares 1-3 Year Treasury Bond ETF (SHY)",       cat:"Treasury ETFs", statusTag:"recommended", duration:1.84,  expense:0.15, tax:"State/Local Tax-Free", desc:"The benchmark 1-3 year Treasury ETF with deep liquidity.", risk:"0.15% ER is dominated by SCHO (0.03%) for the same exposure." },
+    "vgit":  { name:"Vanguard Intermediate-Term Treasury ETF (VGIT)",  cat:"Treasury ETFs", statusTag:"recommended", duration:5.00,  expense:0.04, tax:"State/Local Tax-Free", desc:"3-10 year Treasury exposure capturing the intermediate curve at 0.04% ER.", risk:"Moderate duration. Rate sensitivity is meaningful but well below TLT." },
+    "ief":   { name:"iShares 7-10 Year Treasury Bond ETF (IEF)",       cat:"Treasury ETFs", statusTag:"recommended", duration:7.50,  expense:0.15, tax:"State/Local Tax-Free", desc:"Intermediate-long Treasury benchmark ETF covering the 7-10 year maturity range.", risk:"0.15% ER vs VGIT's 0.04% for similar duration — ER disadvantage of 11bps." },
+    "tlt":   { name:"iShares 20+ Year Treasury Bond ETF (TLT)",        cat:"Treasury ETFs", statusTag:"recommended", duration:16.40, expense:0.15, tax:"State/Local Tax-Free", desc:"Long-duration pure play capturing macro rate trends at the extreme end of the curve.", risk:"Extreme convexity. Each 100bps rate rise implies ~16% NAV loss. Not for capital preservation mandates." },
+    "vtg":   { name:"Vanguard Total Treasury ETF (VTG)",               cat:"Treasury ETFs", statusTag:"recommended", duration:5.80,  expense:0.03, tax:"State/Local Tax-Free", desc:"Blended Treasury index covering short, intermediate, and long maturities at 0.03% ER.", risk:"Curve exposure is undifferentiated — mixed maturity prevents precision targeting." },
+    // ── Municipal Bonds ───────────────────────────────────────────
+    "vwalx": { name:"Vanguard High-Yield Tax-Exempt Admiral (VWALX)",  cat:"Municipal Bonds", statusTag:"current",    duration:6.30, expense:0.09, tax:"Fed Tax-Exempt", desc:"Actively managed high-yield muni bond fund. At 0.09% ER, the active premium is modest vs the yield pickup over passive munis.", risk:"Lower-rated municipal credit. Liquidity can compress in risk-off environments." },
+    "vteb":  { name:"Vanguard Tax-Exempt Bond ETF (VTEB)",             cat:"Municipal Bonds", statusTag:"recommended", duration:5.90, expense:0.05, tax:"Fed Tax-Exempt", desc:"Broad national investment-grade muni ETF at 0.05% ER. Best-in-class passive muni vehicle.", risk:"Underperforms if federal marginal rates decline. Interest rate risk at 5.9Y duration." },
+    "mub":   { name:"iShares National Muni Bond ETF (MUB)",            cat:"Municipal Bonds", statusTag:"recommended", duration:6.00, expense:0.07, tax:"Fed Tax-Exempt", desc:"The benchmark national muni ETF with the deepest liquidity and tightest spreads.", risk:"0.07% ER vs VTEB's 0.05% — marginally higher cost for similar exposure." },
+    // ── Ultra-Short & Short Corporate ────────────────────────────
+    "jpst":  { name:"JPMorgan Ultra-Short Income ETF (JPST)",          cat:"Ultra-Short Corporate Bonds", statusTag:"current",    duration:0.50, expense:0.18, tax:"Fully Taxable", desc:"Actively managed ultra-short corporate bond ETF delivering money-market-plus returns with low duration risk.", risk:"Corporate credit exposure vs government-only alternatives. Active management adds manager risk." },
+    "vcsh":  { name:"Vanguard Short-Term Corporate Bond ETF (VCSH)",    cat:"Ultra-Short Corporate Bonds", statusTag:"recommended", duration:2.70, expense:0.04, tax:"Fully Taxable", desc:"1-5 year investment-grade corporate bond index at 0.04% ER. Excellent balance of yield pickup and duration control.", risk:"Credit spread widening in stress scenarios. Longer duration than JPST." },
+    "igsb":  { name:"iShares Short-Term Corporate Bond ETF (IGSB)",     cat:"Ultra-Short Corporate Bonds", statusTag:"recommended", duration:2.80, expense:0.06, tax:"Fully Taxable", desc:"Short-term IG corporate benchmark with broad issuer diversification.", risk:"0.06% ER vs VCSH's 0.04% for comparable exposure." },
+    "spsb":  { name:"SPDR Portfolio Short Term Corporate Bond (SPSB)",  cat:"Ultra-Short Corporate Bonds", statusTag:"recommended", duration:2.70, expense:0.04, tax:"Fully Taxable", desc:"Low-cost short-term IG corporate ETF matching VCSH's ER at 0.04%.", risk:"Less AUM than VCSH; bid-ask spreads may be slightly wider." },
+    // ── Investment-Grade Corporate ────────────────────────────────
+    "vcit":  { name:"Vanguard Intermediate Corporate Bond ETF (VCIT)",  cat:"Investment-Grade Corporate Bonds", statusTag:"recommended", duration:6.20,  expense:0.04, tax:"Fully Taxable", desc:"5-10 year IG corporate ladder at 0.04% ER. Cost-efficient core corporate allocation.", risk:"Credit spread and duration risk combined. Underperforms in spread-widening events." },
+    "lqd":   { name:"iShares IG Corporate Bond ETF (LQD)",              cat:"Investment-Grade Corporate Bonds", statusTag:"recommended", duration:8.30,  expense:0.14, tax:"Fully Taxable", desc:"The deepest-liquidity IG corporate ETF with 5.22% gross yield.", risk:"8.3Y duration plus credit spread risk. 0.14% ER vs VCIT's 0.04% is notable." },
+    "vtc":   { name:"Vanguard Long-Term Corporate Bond ETF (VTC)",      cat:"Investment-Grade Corporate Bonds", statusTag:"recommended", duration:13.50, expense:0.04, tax:"Fully Taxable", desc:"Long-duration IG corporate bond index at the lowest ER in class (0.04%).", risk:"Extreme duration. Long corporate bonds are highly sensitive to both rate and spread moves." },
+    // ── Aggregate Bond Funds ──────────────────────────────────────
+    "bnd":   { name:"Vanguard Total Bond Market ETF (BND)",             cat:"Aggregate Bond Funds", statusTag:"recommended", duration:6.10, expense:0.03, tax:"Blended Taxation",  desc:"The broadest US fixed income index covering government, corporate, and MBS at 0.03% ER.", risk:"Multi-sector blending dilutes precision. MBS component adds prepayment risk." },
+    "agg":   { name:"iShares Core US Aggregate Bond ETF (AGG)",         cat:"Aggregate Bond Funds", statusTag:"recommended", duration:6.20, expense:0.03, tax:"Blended Taxation",  desc:"The benchmark US aggregate bond ETF with the deepest liquidity pool.", risk:"Virtually identical to BND; marginal ER difference is negligible." },
+    "schz":  { name:"Schwab US Aggregate Bond ETF (SCHZ)",              cat:"Aggregate Bond Funds", statusTag:"recommended", duration:6.20, expense:0.03, tax:"Blended Taxation",  desc:"Schwab's ultra-low-cost aggregate bond ETF matching the Bloomberg US Aggregate.", risk:"Slightly lower AUM vs BND/AGG; marginally wider spreads in stressed markets." },
+    // ── Emerging Market Bonds ─────────────────────────────────────
+    "vwob":  { name:"Vanguard Emerging Markets Gov't Bond ETF (VWOB)",   cat:"Emerging Market Bonds", statusTag:"current",    duration:7.50, expense:0.20, tax:"Fully Taxable", desc:"USD-denominated EM sovereign bond ETF with broad country diversification at 0.20% ER.", risk:"Sovereign credit risk, political risk, USD strength headwinds on EM fundamentals." },
+    "emb":   { name:"iShares J.P. Morgan EM Bond ETF (EMB)",             cat:"Emerging Market Bonds", statusTag:"current",    duration:7.20, expense:0.39, tax:"Fully Taxable", desc:"The benchmark EM USD sovereign bond ETF tracking the JPM EMBI Global Core index.", risk:"0.39% ER is high vs VWOB (0.20%) for similar exposure. USD-denominated limits local EM yield capture." },
+    // ── International Developed Bonds ────────────────────────────
+    "bndx":  { name:"Vanguard Total International Bond ETF (BNDX)",      cat:"International Developed Bonds", statusTag:"recommended", duration:7.00, expense:0.07, tax:"Fully Taxable", desc:"USD-hedged international investment-grade bond ETF covering developed and EM issuers.", risk:"Currency hedging costs erode yield. Low headline yield reflects developed mkt rate environment." },
+    "bwx":   { name:"SPDR Bloomberg Intl Treasury Bond ETF (BWX)",        cat:"International Developed Bonds", statusTag:"recommended", duration:8.50, expense:0.35, tax:"Fully Taxable", desc:"Unhedged international government bond ETF — direct exposure to foreign currency and rate cycles.", risk:"Currency risk is the dominant factor. 0.35% ER is high. Developed market yields are structurally lower." },
+    "wip":   { name:"SPDR FTSE Intl Inflation-Protected Bond ETF (WIP)",  cat:"International Developed Bonds", statusTag:"recommended", duration:8.20, expense:0.50, tax:"Fully Taxable", desc:"Non-US inflation-linked sovereign bond ETF adding global real-rate and currency diversification.", risk:"0.50% ER is the highest in the universe. FX risk is additive to real-rate duration risk." },
+    // ── Inflation-Protected Bonds ─────────────────────────────────
+    "tip":   { name:"iShares TIPS Bond ETF (TIP)",                        cat:"Inflation-Protected Bonds (TIPS)", statusTag:"recommended", duration:6.50, expense:0.18, tax:"Fully Taxable", desc:"Broad US TIPS index ETF providing CPI-linked principal protection across the curve.", risk:"Real-rate duration can overwhelm CPI accruals during sharp real-yield increases." },
+    "schp":  { name:"Schwab US TIPS ETF (SCHP)",                          cat:"Inflation-Protected Bonds (TIPS)", statusTag:"recommended", duration:7.20, expense:0.03, tax:"Fully Taxable", desc:"Lowest-cost broad TIPS ETF at 0.03% ER — 15bps cheaper than TIP for the same exposure.", risk:"Slightly longer duration than TIP increases real-rate sensitivity." },
+    "vtip":  { name:"Vanguard Short-Term Inflation-Protected ETF (VTIP)", cat:"Inflation-Protected Bonds (TIPS)", statusTag:"recommended", duration:2.50, expense:0.04, tax:"Fully Taxable", desc:"Short-duration TIPS ETF targeting 0-5 year inflation linkage with minimal rate risk.", risk:"Short duration reduces both rate risk and inflation accrual potential vs longer TIPS." },
+    // ── Floating-Rate Bonds ───────────────────────────────────────
+    "flot":  { name:"iShares Floating Rate Bond ETF (FLOT)",              cat:"Floating-Rate Bonds", statusTag:"recommended", duration:0.10, expense:0.15, tax:"Fully Taxable", desc:"Investment-grade floating rate corporate bond ETF. Yield resets quarterly with SOFR — maximum protection against rising rates.", risk:"Credit spread widening can offset the rate-reset benefit. Duration is near-zero." },
+    "flrn":  { name:"SPDR Bloomberg IG Floating Rate ETF (FLRN)",         cat:"Floating-Rate Bonds", statusTag:"recommended", duration:0.10, expense:0.15, tax:"Fully Taxable", desc:"IG floating rate note ETF with semi-annual resets. Closely competes with FLOT.", risk:"Marginally lower AUM than FLOT. Functionally interchangeable." },
+    // ── Preferred Securities ──────────────────────────────────────
+    "pff":   { name:"iShares Preferred and Income Securities ETF (PFF)",  cat:"Preferred Securities", statusTag:"current", duration:3.70, expense:0.46, tax:"Fully Taxable", desc:"Preferred equity ETF offering hybrid financial-sector income between bonds and equity at 6.25% yield.", risk:"Subordinated to senior bonds. 0.46% ER. Financial-sector concentration amplifies systemic risk." },
+    // ── Fixed Annuities ───────────────────────────────────────────
+    "fixed_annuity": { name:"5-Year Fixed Annuity",                       cat:"Fixed Annuities", statusTag:"current", duration:5.00, expense:0.00, tax:"Tax-Deferred Growth", desc:"Insurance-company-issued fixed annuity locking in a guaranteed rate for 5 years. No market risk; growth accumulates tax-deferred.", risk:"Illiquid — surrender charges apply for early withdrawal. Credit risk of issuing insurer. Not FDIC insured." },
+    // ── Private Credit ────────────────────────────────────────────
+    "yieldstreet": { name:"Yieldstreet Alternative Income Fund",          cat:"Private Credit", statusTag:"current", duration:2.10, expense:1.50, tax:"Fully Taxable", desc:"Multi-asset alternative income fund with exposure to art finance, real estate debt, legal finance, and private lending.", risk:"Illiquid — no exchange listing. 1.50% ER is high. Non-correlated but hard to exit in stress." },
+    // ── BDCs ──────────────────────────────────────────────────────
+    "arcc":  { name:"Ares Capital Corp (ARCC) BDC",                       cat:"Business Development Companies (BDCs)", statusTag:"current", duration:0.40, expense:1.90, tax:"Fully Taxable", desc:"Largest BDC by AUM. Floating-rate senior secured loans to middle-market companies yield 10.60%.", risk:"BDC NAV is mark-to-model. Underlying loans are illiquid. Equity-like drawdown risk in credit stress." },
+    "main":  { name:"Main Street Capital Corp (MAIN)",                    cat:"Business Development Companies (BDCs)", statusTag:"current", duration:0.50, expense:1.80, tax:"Fully Taxable", desc:"Internally managed BDC with lower middle-market focus. Superior dividend coverage track record vs peers.", risk:"Trades at significant premium to NAV — expensive entry point. BDC equity wrapper risk." },
+    // ── Real Estate Income ────────────────────────────────────────
+    "dst_re": { name:"DST / Syndicated Multifamily Real Estate",          cat:"Real Estate Income Vehicles", statusTag:"current", duration:7.00, expense:1.50, tax:"Favorable (Depreciation)", desc:"Delaware Statutory Trust or syndicated multifamily real estate providing rental income with depreciation tax shield. 1031-exchange compatible.", risk:"Illiquid — 5-10 year lock-up typical. Property-specific risk. Returns are operator-dependent." },
+};
+
+// ═══════════════════════════════════════════════════════════════════
+// STRUCTURAL CATEGORIES (matches new classification)
+// ═══════════════════════════════════════════════════════════════════
+const STRUCTURAL_CATEGORIES = {
+    "Cash & Cash Equivalents":              ["hysa", "vmfxx", "vusxx", "swvxx", "spaxx"],
+    "Certificates of Deposit (CDs)":       ["brokered_cd"],
+    "Bank Deposits":                        ["gift_city_fd"],
+    "U.S. Treasuries — Direct":            ["t_bills_short", "t_bills_long", "note_2y", "note_5y", "tokenized_tb"],
+    "Treasury ETFs":                        ["sgov", "bil", "shv", "scho", "vgsh", "shy", "vgit", "ief", "tlt", "vtg"],
+    "Municipal Bonds":                      ["vwalx", "vteb", "mub"],
+    "Ultra-Short Corporate Bonds":          ["jpst", "vcsh", "igsb", "spsb"],
+    "Investment-Grade Corporate Bonds":     ["vcit", "lqd", "vtc"],
+    "Aggregate Bond Funds":                 ["bnd", "agg", "schz"],
+    "Emerging Market Bonds":               ["vwob", "emb"],
+    "International Developed Bonds":       ["bndx", "bwx", "wip"],
+    "Inflation-Protected Bonds (TIPS)":    ["tip", "schp", "vtip"],
+    "Floating-Rate Bonds":                 ["flot", "flrn"],
+    "Preferred Securities":                ["pff"],
+    "Fixed Annuities":                     ["fixed_annuity"],
+    "Private Credit":                      ["yieldstreet"],
+    "Business Development Companies (BDCs)":["arcc", "main"],
+    "Real Estate Income Vehicles":         ["dst_re"],
+};
+
+// ═══════════════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════════════
+let activeAppPage = 'matrix';
+let activeProfile = 'safety';
+let baseYields = { ...BASE_YIELDS_DEFAULT };
+let manualWeights = {};
+let liveAuctionSignals = {};
+let accordionOpenState = {};
+
+// ═══════════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════════
+window.addEventListener('DOMContentLoaded', () => {
+    loadEngineCache();
+    renderYieldTweakerUI();
+    showAppPage(activeAppPage);
+    executeAttributionMatrix();
+    fetchLiveTreasuryAuctions();
+
+    document.getElementById('capital').addEventListener('input', () => { saveEngineCache(); executeAttributionMatrix(); });
+    document.getElementById('taxJurisdiction').addEventListener('change', () => { saveEngineCache(); executeAttributionMatrix(); });
+    document.getElementById('horizon').addEventListener('input', e => {
+        document.getElementById('horizonVal').innerText = `${e.target.value} Months`;
+        saveEngineCache(); executeAttributionMatrix();
+    });
+    document.getElementById('liquidityTarget').addEventListener('input', e => {
+        document.getElementById('liquidityVal').innerText = `${e.target.value}%`;
+        saveEngineCache(); executeAttributionMatrix();
+    });
+    document.getElementById('forensicModal').addEventListener('click', function(e) {
+        if (e.target === this) closeForensicModal();
+    });
+    window.addEventListener('resize', () => generateYieldCurvePlot());
+});
+
+// ═══════════════════════════════════════════════════════════════════
+// CORE ALLOCATION ENGINE
+// ═══════════════════════════════════════════════════════════════════
+function executeAttributionMatrix() {
+    const totalCapital = parseFloat(document.getElementById('capital').value) || 0;
+    const targetJurisdiction = document.getElementById('taxJurisdiction').value;
+    const horizonMonths = parseInt(document.getElementById('horizon').value) || 1;
+    const minLiquidityPct = parseFloat(document.getElementById('liquidityTarget').value) || 0;
+
+    const logs = [];
+    const weights = {}, autoWeights = {};
+    Object.keys(ASSETS_MANIFEST).forEach(k => { weights[k] = 0; autoWeights[k] = 0; });
+
+    // ── Liquidity Sweep ──────────────────────────────────────────
+    const sweepAsset = targetJurisdiction === 'us-muni-optimized' ? 'vusxx' : 'spaxx';
+    autoWeights[sweepAsset] = minLiquidityPct / 100;
+    logs.push(`[SWEEP] Liquidity floor: ${minLiquidityPct}% → ${ASSETS_MANIFEST[sweepAsset].name}`);
+
+    const remainderWeight = 1.0 - (minLiquidityPct / 100);
+
+    if (remainderWeight > 0) {
+        if (activeProfile === 'safety') {
+            logs.push(`[PROFILE] Capital Protection | Horizon: ${horizonMonths}M | Jurisdiction: ${targetJurisdiction}`);
+            if (horizonMonths <= 6) {
+                // Ultra-short, zero credit risk
+                autoWeights['sgov']         += remainderWeight * 0.30;
+                autoWeights['t_bills_short'] += remainderWeight * 0.40;
+                autoWeights['vcsh']         += remainderWeight * 0.15; // Short corp for tiny yield pickup
+                autoWeights['scho']         += remainderWeight * 0.15;
+                logs.push(`[ALLOC] Short horizon (≤6M): T-Bills 40%, SGOV 30%, SCHO 15%, VCSH 15%`);
+            } else if (horizonMonths <= 18) {
+                // Medium safety: extend to notes, add floating protection
+                autoWeights['t_bills_long'] += remainderWeight * 0.30;
+                autoWeights['scho']         += remainderWeight * 0.20;
+                autoWeights['vgsh']         += remainderWeight * 0.20;
+                autoWeights['note_2y']      += remainderWeight * 0.20;
+                autoWeights['flot']         += remainderWeight * 0.10; // Floating rate buffer
+                logs.push(`[ALLOC] Medium horizon (≤18M): T-Bills-Long 30%, SCHO 20%, VGSH 20%, 2Y Note 20%, FLOT 10%`);
+            } else if (horizonMonths <= 36) {
+                // Long safety: core note ladder + TIPS hedge
+                autoWeights['note_2y']  += remainderWeight * 0.35;
+                autoWeights['note_5y']  += remainderWeight * 0.30;
+                autoWeights['vtip']     += remainderWeight * 0.15; // Short-TIPS inflation hedge
+                autoWeights['vgsh']     += remainderWeight * 0.10;
+                autoWeights['brokered_cd'] += remainderWeight * 0.10; // FDIC-insured rate lock
+                logs.push(`[ALLOC] Long safety (≤36M): 2Y Note 35%, 5Y Note 30%, VTIP 15%, VGSH 10%, Brokered CD 10%`);
+            } else {
+                // Very long safety: fixed annuity + notes + TIPS + CD ladder
+                autoWeights['note_5y']       += remainderWeight * 0.30;
+                autoWeights['note_2y']       += remainderWeight * 0.25;
+                autoWeights['fixed_annuity'] += remainderWeight * 0.20; // Tax-deferred lock
+                autoWeights['schp']          += remainderWeight * 0.15; // Low-cost TIPS
+                autoWeights['brokered_cd']   += remainderWeight * 0.10;
+                logs.push(`[ALLOC] Extended safety (>36M): 5Y Note 30%, 2Y Note 25%, Fixed Annuity 20%, SCHP 15%, CD 10%`);
+            }
+
+        } else if (activeProfile === 'balanced') {
+            logs.push(`[PROFILE] Balanced Income | Horizon: ${horizonMonths}M | Jurisdiction: ${targetJurisdiction}`);
+            const muniKey = targetJurisdiction === 'us-muni-optimized' ? 'vwalx' : 'vteb';
+            autoWeights['bnd']      += remainderWeight * 0.22; // Core agg anchor
+            autoWeights['vcit']     += remainderWeight * 0.18; // IG corporate
+            autoWeights['schp']     += remainderWeight * 0.12; // Inflation hedge
+            autoWeights['vcsh']     += remainderWeight * 0.13; // Short corp quality
+            autoWeights['flot']     += remainderWeight * 0.10; // Floating rate buffer
+            autoWeights[muniKey]    += remainderWeight * 0.15; // Tax-sheltered income
+            if (horizonMonths <= 18) {
+                autoWeights['scho'] += remainderWeight * 0.10;
+                logs.push(`[ALLOC] Balanced short-horizon: BND 22%, VCIT 18%, VCSH 13%, SCHP 12%, ${muniKey.toUpperCase()} 15%, FLOT 10%, SCHO 10%`);
+            } else {
+                autoWeights['vgit'] += remainderWeight * 0.10;
+                logs.push(`[ALLOC] Balanced long-horizon: BND 22%, VCIT 18%, VCSH 13%, SCHP 12%, ${muniKey.toUpperCase()} 15%, FLOT 10%, VGIT 10%`);
+            }
+
+        } else { // yield maxima
+            logs.push(`[PROFILE] Yield Maxima | Horizon: ${horizonMonths}M | Jurisdiction: ${targetJurisdiction}`);
+            if (targetJurisdiction === 'cross-border-dtaa') {
+                // DTAA: private credit + EM bonds + real estate
+                autoWeights['arcc']       += remainderWeight * 0.25;
+                autoWeights['yieldstreet'] += remainderWeight * 0.20;
+                autoWeights['gift_city_fd'] += remainderWeight * 0.15; // GIFT City USD FD
+                autoWeights['vwob']       += remainderWeight * 0.15; // EM sovereign bonds
+                autoWeights['pff']        += remainderWeight * 0.15;
+                autoWeights['wip']        += remainderWeight * 0.10; // Intl TIPS for global diversification
+                logs.push(`[ALLOC] DTAA Yield: ARCC 25%, Yieldstreet 20%, GIFT City FD 15%, VWOB 15%, PFF 15%, WIP 10%`);
+            } else if (targetJurisdiction === 'us-muni-optimized') {
+                autoWeights['vwalx'] += remainderWeight * 0.30; // High-yield muni core
+                autoWeights['pff']   += remainderWeight * 0.20;
+                autoWeights['arcc']  += remainderWeight * 0.25;
+                autoWeights['main']  += remainderWeight * 0.15;
+                autoWeights['flot']  += remainderWeight * 0.10; // Floating rate buffer
+                logs.push(`[ALLOC] Muni Yield: VWALX 30%, ARCC 25%, PFF 20%, MAIN 15%, FLOT 10%`);
+            } else {
+                // US high-bracket yield maxima: BDCs + preferred + EM + floating
+                autoWeights['arcc']  += remainderWeight * 0.28;
+                autoWeights['main']  += remainderWeight * 0.20;
+                autoWeights['pff']   += remainderWeight * 0.18;
+                autoWeights['lqd']   += remainderWeight * 0.15;
+                autoWeights['vwob']  += remainderWeight * 0.12; // EM yield kicker
+                autoWeights['flot']  += remainderWeight * 0.07;
+                logs.push(`[ALLOC] US Yield Maxima: ARCC 28%, MAIN 20%, PFF 18%, LQD 15%, VWOB 12%, FLOT 7%`);
+            }
+        }
+    }
+
+    // ── Merge manual overrides ────────────────────────────────────
+    let totalManualBound = 0;
+    Object.keys(manualWeights).forEach(k => totalManualBound += manualWeights[k]);
+
+    if (totalManualBound > 1.0) {
+        logs.push(`[WARN] User overrides exceed 100%. Scaling proportionally.`);
+        Object.keys(ASSETS_MANIFEST).forEach(k => {
+            if (manualWeights[k] !== undefined) weights[k] = manualWeights[k] / totalManualBound;
         });
-
-        // LIVE TREASURY FISCAL DATA INTEGRATION LAYER
-        async function fetchLiveTreasuryAuctions() {
-            const apiBase = "https://api.fiscaldata.treasury.gov/services/api/fiscal_service/v1/accounting/od";
-            const upcomingUrl = `${apiBase}/upcoming_auctions?sort=-announcemt_date,-auction_date&page[size]=6`;
-            const recentUrl = `${apiBase}/auctions_query?sort=-auction_date&page[size]=24`;
-            
-            const upcomingContainer = document.getElementById('upcomingAuctionsContainer');
-            const recentContainer = document.getElementById('recentAuctionsContainer');
-
-            // 1. Fetch Upcoming Pipeline
-            try {
-                const json = await fetchFiscalData(upcomingUrl);
-                upcomingContainer.innerHTML = '';
-                if(json.data && json.data.length > 0) {
-                    json.data.forEach(item => {
-                        const div = document.createElement('div');
-                        div.className = "p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-2xs flex justify-between items-center";
-                        div.innerHTML = `
-                            <div>
-                                <span class="text-blue-600 dark:text-blue-400 font-bold">${item.security_term || ''} ${item.security_type || 'Issue'}</span>
-                                <span class="block text-[9px] text-slate-400">CUSIP: ${item.cusip || 'N/A'}</span>
-                            </div>
-                            <div class="text-right text-[10px]">
-                                <span class="text-slate-500 block">Auction: <b class="text-slate-800 dark:text-slate-200">${item.auction_date || 'N/A'}</b></span>
-                                <span class="text-slate-500 block">Settles: ${item.issue_date || 'N/A'}</span>
-                            </div>
-                        `;
-                        upcomingContainer.appendChild(div);
-                    });
-                } else {
-                    upcomingContainer.innerHTML = '<div class="text-slate-400 p-2">No upcoming announcements discovered.</div>';
-                }
-            } catch (e) {
-                upcomingContainer.innerHTML = `<div class="text-red-500 p-2">${e.message || 'Error connecting to Fiscal Service feed.'}</div>`;
-            }
-
-            // 2. Fetch Recent Cleared Yield Results
-            try {
-                const json = await fetchFiscalData(recentUrl);
-                const clearedAuctions = (json.data || [])
-                    .map(item => ({ item, yieldValue: getAuctionYield(item) }))
-                    .filter(({ yieldValue }) => Number.isFinite(yieldValue))
-                    .slice(0, 6);
-                recentContainer.innerHTML = '';
-                if(clearedAuctions.length > 0) {
-                    applyAuctionSignals(clearedAuctions.map(({ item, yieldValue }) => ({ ...item, yieldValue })));
-                    clearedAuctions.forEach(({ item, yieldValue }) => {
-                        const div = document.createElement('div');
-                        div.className = "p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-2xs flex justify-between items-center";
-                        div.innerHTML = `
-                            <div>
-                                <span class="text-slate-800 dark:text-slate-200 font-bold">${item.security_term || ''} ${item.security_type || 'Issue'}</span>
-                                <span class="block text-[9px] text-slate-400">Awarded: ${item.auction_date || ''}</span>
-                            </div>
-                            <div class="text-right">
-                                <span class="text-emerald-600 dark:text-emerald-400 font-black text-sm">${yieldValue.toFixed(2)}%</span>
-                                <span class="block text-[8px] text-slate-400">Bid/Cover: ${formatRatio(item.bid_to_cover_ratio)}</span>
-                            </div>
-                        `;
-                        recentContainer.appendChild(div);
-                    });
-                } else {
-                    recentContainer.innerHTML = '<div class="text-slate-400 p-2">No recent clearing prints located.</div>';
-                    applyAuctionSignals([]);
-                }
-            } catch (e) {
-                recentContainer.innerHTML = '<div class="text-red-500 p-2">Error query execution failure.</div>';
-            }
-        }
-
-        async function fetchFiscalData(url) {
-            const res = await fetch(url);
-            const json = await res.json().catch(() => ({}));
-            if (!res.ok) {
-                throw new Error(json.message || `Fiscal Service API returned HTTP ${res.status}.`);
-            }
-            return json;
-        }
-
-        function parseFiscalNumber(value) {
-            if (value === null || value === undefined || value === '' || value === 'null') return NaN;
-            return Number.parseFloat(value);
-        }
-
-        function getAuctionYield(item) {
-            return [
-                item.high_yield,
-                item.high_investment_rate,
-                item.high_discnt_rate,
-                item.high_rate
-            ].map(parseFiscalNumber).find(Number.isFinite);
-        }
-
-        function formatRatio(value) {
-            const ratio = parseFiscalNumber(value);
-            return Number.isFinite(ratio) ? ratio.toFixed(2) : 'N/A';
-        }
-
-        function classifyAuctionSignal(item) {
-            const term = `${item.security_term || ''} ${item.security_term_week_year || ''} ${item.security_term_day_month || ''}`.toLowerCase();
-            const type = `${item.security_type || ''}`.toLowerCase();
-            const weekMatch = term.match(/(\d+)[-\s]*week/);
-            const yearMatch = term.match(/(\d+)[-\s]*year/);
-            const weeks = weekMatch ? parseInt(weekMatch[1]) : null;
-            const years = yearMatch ? parseInt(yearMatch[1]) : null;
-
-            if (type.includes('bill') && weeks !== null) {
-                if (weeks <= 17) return 't_bills_short';
-                if (weeks <= 52) return 't_bills_long';
-            }
-            if (type.includes('note') && years !== null) {
-                if (years <= 3) return 'note_2y';
-                if (years <= 7) return 'note_5y';
-            }
-            return null;
-        }
-
-        function applyAuctionSignals(rows) {
-            liveAuctionSignals = {};
-            rows.forEach(item => {
-                const key = classifyAuctionSignal(item);
-                if (!key || liveAuctionSignals[key]) return;
-                liveAuctionSignals[key] = {
-                    yield: item.yieldValue,
-                    label: `${item.security_term || ''} ${item.security_type || ''}`.trim(),
-                    auctionDate: item.auction_date || 'N/A'
-                };
+    } else {
+        Object.keys(manualWeights).forEach(k => weights[k] = manualWeights[k]);
+        const available = 1.0 - totalManualBound;
+        const unoverriddenAutoSum = Object.keys(ASSETS_MANIFEST).reduce((s, k) => s + (manualWeights[k] === undefined ? autoWeights[k] : 0), 0);
+        if (unoverriddenAutoSum > 0) {
+            Object.keys(ASSETS_MANIFEST).forEach(k => {
+                if (manualWeights[k] === undefined) weights[k] = autoWeights[k] * (available / unoverriddenAutoSum);
             });
-            executeAttributionMatrix();
+        } else if (available > 0 && manualWeights[sweepAsset] === undefined) {
+            weights[sweepAsset] += available;
+        }
+    }
+
+    // ── Build forensic logic for each asset ──────────────────────
+    const logicResults = {};
+    Object.keys(ASSETS_MANIFEST).forEach(key => {
+        logicResults[key] = buildForensicLogic(key, weights, autoWeights, manualWeights, targetJurisdiction, horizonMonths);
+    });
+
+    // ── Render accordion ─────────────────────────────────────────
+    renderAccordion(weights, logicResults, totalCapital, targetJurisdiction);
+
+    // ── Summary yields ────────────────────────────────────────────
+    let blendedGross = 0, blendedNet = 0;
+    Object.keys(ASSETS_MANIFEST).forEach(key => {
+        const w = weights[key] || 0;
+        const meta = ASSETS_MANIFEST[key];
+        const raw = getEffectiveYieldSignal(key).yield;
+        let net = raw;
+        if (targetJurisdiction === 'us-high')           { if (meta.tax !== 'State/Local Tax-Free') net = raw * 0.63; }
+        else if (targetJurisdiction === 'us-muni-optimized') { if (meta.tax !== 'Fed Tax-Exempt' && meta.tax !== 'State/Local Tax-Free') net = raw * 0.58; }
+        else if (targetJurisdiction === 'cross-border-dtaa') { net = raw * 0.85; }
+        blendedGross += w * raw;
+        blendedNet   += w * net;
+    });
+    document.getElementById('summaryGrossYield').innerText = `${blendedGross.toFixed(2)}%`;
+    document.getElementById('summaryNetYield').innerText   = `${blendedNet.toFixed(2)}%`;
+
+    updateLiveAuctionSummary(logs);
+    generateYieldCurvePlot();
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// FORENSIC LOGIC ENGINE — context-aware per-asset reasoning
+// ═══════════════════════════════════════════════════════════════════
+function buildForensicLogic(key, weights, autoWeights, manualWeights, jurisdiction, horizonMonths) {
+    const w = weights[key] || 0;
+    const isManual = manualWeights[key] !== undefined;
+    const isSelected = w > 0;
+    const meta = ASSETS_MANIFEST[key];
+    const signal = liveAuctionSignals[key];
+    const pct = (w * 100).toFixed(1);
+
+    if (isManual) {
+        return { status:'locked', label:'Locked', reason:`Manual weight of ${pct}% applied. Auto-allocation engine suspended for this position. Clear to restore rule-based control.`, color:'amber' };
+    }
+
+    // ── Selected assets ──────────────────────────────────────────
+    if (isSelected) {
+        let reason = '';
+        switch (key) {
+            case 'hysa':        reason = `${pct}% as an FDIC-insured, T+0 liquid cash reserve. At ${baseYields[key]}% with zero market risk, the HYSA anchors the immediate liquidity buffer — distinct from the brokerage sweep because FDIC protection is a separate risk layer.`; break;
+            case 'spaxx':       reason = `${pct}% as the primary brokerage sweep (Fidelity). Despite its 0.42% ER, SPAXX is the default settlement mechanism — its presence reflects brokerage structure, not active selection. VUSXX would be preferred for yield efficiency if a Vanguard sweep is available.`; break;
+            case 'vusxx':       reason = `${pct}% as the muni-optimized liquidity sweep. VUSXX's Treasury-only income qualifies for state/local tax exemption, adding net yield vs SPAXX under this jurisdiction without changing T+0 liquidity character.`; break;
+            case 'vmfxx':       reason = `${pct}% as the Vanguard government sweep vehicle. At 0.11% ER vs SPAXX's 0.42%, VMFXX saves 31bps annually for equivalent government money market coverage.`; break;
+            case 'brokered_cd': reason = `${pct}% in 9-13M brokered CDs to lock in the ${baseYields[key]}% rate for the full CD term. The FDIC-insured structure eliminates credit risk while capturing a yield premium above T-bills at the same maturity. Optimal in the current rate plateau.`; break;
+            case 'gift_city_fd': reason = `${pct}% in GIFT City IBU USD Fixed Deposits. The ${baseYields[key]}% rate is fully exempt from Indian income tax under the IFSC regime, making this the highest net-yield instrument available under the DTAA cross-border mandate.`; break;
+            case 't_bills_short': reason = `${pct}% in direct 4-13W T-Bills at ${baseYields[key]}%, zero expense ratio, zero credit risk. In the short-horizon safety profile, direct T-bills dominate SGOV by 9bps ER savings that compound across rolling maturities.`; break;
+            case 't_bills_long': reason = `${pct}% in 26-52W T-Bills locking in ${baseYields[key]}% for up to one year at zero cost. The maturity-lock eliminates reinvestment risk for this tranche, which is an asset in a rate-cutting environment.`; break;
+            case 'note_2y':    reason = `${pct}% in direct 2Y Treasury Notes at ${baseYields[key]}%. Zero expense, state-tax exempt, and held-to-maturity eliminates NAV risk — superior to any 2Y ETF wrapper for buy-and-hold capital protection at this horizon.`; break;
+            case 'note_5y':    reason = `${pct}% in direct 5Y Treasury Notes at ${baseYields[key]}%. The ${(baseYields['note_5y'] - baseYields['note_2y']).toFixed(2)}% term premium over the 2Y is captured with zero ER and no NAV risk if held to maturity. Suitable for horizons >24M.`; break;
+            case 'tokenized_tb': reason = `${pct}% in Ondo Finance tokenized T-Bills (OUSG) providing on-chain T-bill exposure at ${baseYields[key]}%. Selected as a pilot allocation within the DTAA cross-border digital asset mandate — provides sovereign credit quality with blockchain settlement.`; break;
+            case 'sgov':       reason = `${pct}% in SGOV as the primary ultra-short ETF at 0.09% ER — lowest cost in the 0-3M T-bill ETF segment. Outperforms BIL by 4bps and SHV by 6bps annually. Provides intraday liquidity vs direct T-bill purchases.`; break;
+            case 'vcsh':       reason = `${pct}% in VCSH for short-duration IG corporate yield pickup. At 0.04% ER, VCSH delivers ${(baseYields['vcsh'] - baseYields['scho']).toFixed(2)}% additional gross yield vs SCHO — the credit spread premium is the compensation for minor credit risk at the 1-5Y IG end.`; break;
+            case 'scho':       reason = `${pct}% in SCHO for the 1-3Y Treasury slot at 0.03% ER — lowest in class. Bridges the gap between cash and notes with minimal duration risk and state-tax exempt income.`; break;
+            case 'vgsh':       reason = `${pct}% in VGSH (0.04% ER) alongside SCHO. The two ETFs have near-identical duration (1.86Y vs 1.85Y) but cover slightly different Treasury index compositions — the combined position enhances rebalancing precision.`; break;
+            case 'flot':       reason = `${pct}% in FLOT as a floating-rate buffer. With SOFR-linked quarterly resets, FLOT benefits directly from elevated short-term rates while adding minimal duration risk — acts as an insurance position against unexpected rate hikes.`; break;
+            case 'vtip':       reason = `${pct}% in VTIP for short-duration CPI protection. At 2.5Y duration and 0.04% ER, VTIP adds inflation linkage with minimal rate risk — the optimal inflation hedge for horizons under 3 years.`; break;
+            case 'schp':       reason = `${pct}% in SCHP for cost-efficient broad TIPS exposure at 0.03% ER — 15bps cheaper than TIP. Under longer horizons where inflation risk is material, SCHP is the preferred vehicle for real-return protection.`; break;
+            case 'fixed_annuity': reason = `${pct}% in a 5-Year Fixed Annuity locking in ${baseYields['fixed_annuity']}% with tax-deferred growth. In the extended-horizon safety profile, the guaranteed rate and tax deferral are structurally superior to a comparable Treasury note on an after-tax basis.`; break;
+            case 'brokered_cd': reason = `${pct}% in 9-13M Brokered CDs at ${baseYields['brokered_cd']}%. FDIC-insured rate lock with no ER — captures a ${(baseYields['brokered_cd'] - baseYields['note_2y']).toFixed(2)}% premium over the 2Y Note for the same credit quality profile.`; break;
+            case 'bnd':        reason = `${pct}% in BND as the core multi-sector anchor at 0.03% ER under the balanced profile. Covers government, IG corporate, and MBS in a single vehicle — establishes the portfolio's "bond floor" before tactical tilts.`; break;
+            case 'vcit':       reason = `${pct}% in VCIT (0.04% ER) for the IG corporate intermediate allocation. At ${baseYields['vcit']}% gross yield, VCIT delivers ${(baseYields['vcit'] - baseYields['bnd']).toFixed(2)}% spread pickup over BND with focused credit quality control.`; break;
+            case 'vgit':       reason = `${pct}% in VGIT for intermediate sovereign exposure (0.04% ER). The 5Y duration adds positive curve slope capture without extending to TLT's extreme convexity risk.`; break;
+            case 'vwalx':      reason = jurisdiction === 'us-muni-optimized'
+                ? `${pct}% in VWALX as the core tax-exempt income engine. The ${baseYields['vwalx']}% yield tax-exempt grosses up to ~${(baseYields['vwalx'] / 0.63).toFixed(2)}% for a 37% bracket investor — substantially outperforming taxable alternatives net of taxes. Active management justified by the yield premium over VTEB.`
+                : `${pct}% in VWALX for high-yield muni exposure. Active management provides dynamic credit positioning not captured by passive VTEB or MUB.`; break;
+            case 'vteb':       reason = `${pct}% in VTEB (0.05% ER) as the lowest-cost passive muni vehicle. Federal tax-exemption at ${baseYields['vteb']}% grosses up to ~${(baseYields['vteb'] / 0.63).toFixed(2)}% pre-tax equivalent for high-bracket investors.`; break;
+            case 'pff':        reason = `${pct}% in PFF for hybrid preferred equity income at ${baseYields['pff']}%. Financial-sector preferred securities offer a yield premium above IG bonds with moderate 3.7Y duration. Accepted within yield-maxima mandate.`; break;
+            case 'arcc':       reason = `${pct}% in ARCC at ${baseYields['arcc']}% yield. As the largest BDC, ARCC's floating-rate senior secured loan portfolio benefits directly from elevated rates. Yield nearly 3x that of IG corporate — the risk premium is explicitly accepted within the yield-maxima profile.`; break;
+            case 'main':       reason = `${pct}% in MAIN at ${baseYields['main']}% yield. MAIN's internally managed structure eliminates external manager fees and its dividend coverage ratio is among the best in the BDC universe — the lower yield vs ARCC reflects superior credit quality discipline.`; break;
+            case 'yieldstreet': reason = `${pct}% in Yieldstreet for non-correlated alternative income at ${baseYields['yieldstreet']}%. The multi-asset private credit exposure (art finance, real estate debt, legal) provides income streams uncorrelated with public market volatility — explicitly accepted illiquidity premium under DTAA mandate.`; break;
+            case 'vwob':       reason = `${pct}% in VWOB at ${baseYields['vwob']}% — the highest-yielding liquid ETF in the yield-maxima universe after BDCs. USD-denominated EM sovereign bonds from countries rated BB+ to BBB with 0.20% ER. Geographic diversification adds uncorrelated spread income.`; break;
+            case 'lqd':        reason = `${pct}% in LQD at ${baseYields['lqd']}% gross yield. The deepest-liquidity IG corporate ETF provides the highest liquid investment-grade yield with benchmark-quality spreads. 8.3Y duration is accepted under the yield-maxima mandate.`; break;
+            case 'gift_city_fd': reason = `${pct}% in GIFT City IBU USD Fixed Deposits at ${baseYields['gift_city_fd']}% — fully exempt from Indian income tax under the IFSC regime. Only available under the DTAA cross-border mandate; highest net yield instrument in the universe for this jurisdiction.`; break;
+            case 'wip':        reason = `${pct}% in WIP for global real-rate diversification. Under the DTAA mandate, adding non-USD sovereign inflation-linked exposure reduces portfolio correlation to US rate cycles.`; break;
+            case 'flrn':       reason = `${pct}% in FLRN as the secondary floating-rate allocation alongside FLOT. Complementary SOFR-linked exposure across a slightly different issuer pool.`; break;
+            default:           reason = `${pct}% allocated under ${activeProfile} profile at ${horizonMonths}M horizon. Base yield: ${baseYields[key]?.toFixed(2) ?? '--'}%.`;
+        }
+        if (signal) reason += ` ◆ Live auction override: cleared at ${signal.yield.toFixed(2)}% on ${signal.auctionDate}.`;
+        return { status:'selected', label: signal ? 'Live' : 'Active', reason, color:'emerald' };
+    }
+
+    // ── Rejected assets — specific reasons ───────────────────────
+    let reason = '';
+    switch (key) {
+        case 'hysa':        reason = `Not explicitly allocated — HYSA balances exist outside the brokerage allocation model and are tracked separately. The sweep assets (SPAXX/VUSXX) cover the brokerage liquidity floor within this portfolio.`; break;
+        case 'vmfxx':       reason = `VMFXX is displaced by ${jurisdiction === 'us-muni-optimized' ? 'VUSXX (state-tax exempt)' : 'SPAXX (default Fidelity sweep)'}. Only one primary sweep vehicle is active per brokerage; VMFXX would be the choice on a Vanguard platform.`; break;
+        case 'vusxx':       reason = jurisdiction === 'us-muni-optimized'
+                ? `VUSXX is already the active sweep vehicle under this muni-optimized profile.`
+                : `VUSXX's state-exemption advantage is not cost-effective at this jurisdiction (${jurisdiction}). The break-even state marginal rate vs SPAXX is not met.`; break;
+        case 'swvxx':       reason = `SWVXX (0.34% ER, prime/commercial paper exposure) is dominated by government-only sweep alternatives. Its private credit contamination and high ER make it the worst-value cash vehicle in every jurisdiction scenario.`; break;
+        case 'spaxx':       reason = jurisdiction === 'us-muni-optimized'
+                ? `SPAXX is displaced by VUSXX under muni-optimized jurisdiction. The state-tax exemption of VUSXX is worth ~15bps net at high federal brackets.`
+                : `SPAXX is already the active sweep vehicle under this profile.`; break;
+        case 'brokered_cd': reason = `Brokered CDs are not activated in this horizon/profile configuration. Under ${horizonMonths <= 6 ? 'short horizons, the maturity lock is unnecessary when SGOV provides identical credit quality with daily liquidity.' : 'the current profile, the capital lock is not justified relative to liquid alternatives at similar yields.'}`; break;
+        case 'gift_city_fd': reason = `GIFT City USD FDs are restricted to the US-India DTAA cross-border mandate. Under the current ${jurisdiction} jurisdiction, the IFSC tax exemption benefit is not accessible.`; break;
+        case 'tokenized_tb': reason = `Tokenized T-Bills (Ondo/OUSG) are excluded in non-DTAA profiles. The blockchain settlement layer adds operational and regulatory risk not justified outside cross-border digital asset mandates.`; break;
+        case 't_bills_short': reason = `Direct T-Bills are not activated — under the current ${activeProfile} profile, ETF wrappers (SGOV) are preferred for their intraday liquidity and automatic coupon reinvestment vs the maturity-lock of direct bill purchases.`; break;
+        case 't_bills_long': reason = `26-52W direct T-Bills are not deployed. The current allocation uses ETFs (VGSH/SCHO) for this duration band to retain daily liquidity without the maturity-commitment overhead.`; break;
+        case 'note_2y':    reason = `2Y Notes not activated — the current ${horizonMonths}M horizon setting ${horizonMonths < 24 ? 'is shorter than the 2Y commitment period, creating held-to-maturity lock risk.' : 'uses ETF wrappers in this duration band for flexibility.'}`; break;
+        case 'note_5y':    reason = `5Y Notes require a >24M horizon to justify the maturity lock. The current ${horizonMonths}M window ${horizonMonths < 24 ? 'is insufficient — capital may be needed before the 60M hold period.' : 'uses VGIT/IEF ETFs for this duration with daily liquidity.'}`; break;
+        case 'bil':        reason = `BIL (0.13% ER) is dominated by SGOV (0.09% ER) for 1-3M T-bill exposure. Functionally identical instruments; 4bps ER gap favors SGOV every time.`; break;
+        case 'shv':        reason = `SHV (0.15% ER) covers 1-12M Treasuries but overlaps with both SGOV and SCHO at higher cost. It occupies a middle ground that SGOV + SCHO together cover more efficiently.`; break;
+        case 'scho':       reason = `SCHO not selected in this configuration — the short-Treasury allocation is covered by VGSH (near-identical duration, 1bp ER disadvantage, slightly broader coverage).`; break;
+        case 'vgsh':       reason = `VGSH not selected — SCHO is preferred in this configuration at 0.03% ER vs VGSH's 0.04%. The 1bp ER difference is minimal but SCHO wins on pure cost.`; break;
+        case 'shy':        reason = `SHY (0.15% ER) is the most expensive short-Treasury ETF — dominated by SCHO (0.03%) and VGSH (0.04%) for identical 1-3Y exposure. Only justified if SHY-specific liquidity depth is required for institutional block trades.`; break;
+        case 'vgit':       reason = `VGIT (intermediate Treasury) is not active in this profile — the allocation strategy does not require the 3-10Y intermediate sovereign slot at this horizon/profile combination.`; break;
+        case 'ief':        reason = `IEF (0.15% ER) is dominated by VGIT (0.04% ER) for 7-10Y Treasury exposure — 11bps annual cost penalty for near-identical duration and risk profile.`; break;
+        case 'tlt':        reason = `TLT (16.4Y duration) is excluded under the ${activeProfile} profile. The extreme convexity exposure — ~16% NAV loss per 100bps rate rise — violates capital preservation constraints. Only activated in yield-maxima mode with >24M horizons.`; break;
+        case 'vtg':        reason = `VTG's blended full-curve Treasury index prevents the precise duration targeting this strategy requires. Separating into bill, note, and ETF components achieves the same exposure with more control.`; break;
+        case 'vwalx':      reason = jurisdiction !== 'us-muni-optimized' && jurisdiction !== 'us-high'
+                ? `VWALX's Federal tax exemption advantage is diminished under the ${jurisdiction} mandate. The 1.50% high-yield muni credit risk premium is not compensated adequately after accounting for cross-border tax treatment.`
+                : `Municipal allocation is concentrated in VTEB (lower cost, investment-grade) under this configuration. VWALX's high-yield credit risk is not activated under the current risk profile.`; break;
+        case 'vteb':       reason = jurisdiction !== 'us-muni-optimized' && jurisdiction !== 'us-high'
+                ? `VTEB's Federal tax exemption benefit requires a high US marginal rate to exceed taxable equivalent yield. Under ${jurisdiction}, the TEY crossover is not achieved.`
+                : `VWALX is preferred for the muni allocation in this yield-oriented profile, capturing the high-yield premium over VTEB.`; break;
+        case 'mub':        reason = `Both VTEB and MUB were considered for the passive muni slot. VTEB wins on ER (0.05% vs MUB's 0.07%) with equivalent diversification. MUB's liquidity advantage is only material for very large block trades.`; break;
+        case 'jpst':       reason = `JPST (actively managed, 0.18% ER) is displaced by VCSH (passive, 0.04% ER) for short corporate exposure. The 14bps ER gap and active management risk premium favor the passive vehicle in this context.`; break;
+        case 'vcsh':       reason = `VCSH not active in this profile — the corporate short-end is not part of the current allocation strategy (${activeProfile} at ${horizonMonths}M horizon).`; break;
+        case 'igsb':       reason = `IGSB (0.06% ER) is displaced by VCSH (0.04% ER) for short IG corporate exposure — 2bps ER advantage with comparable duration and credit quality.`; break;
+        case 'spsb':       reason = `SPSB ties VCSH on ER (0.04%) but has lower AUM. Marginally wider bid-ask spreads make VCSH the preferred execution vehicle for this category.`; break;
+        case 'vcit':       reason = `IG corporate intermediate exposure not activated under the ${activeProfile} profile. Credit spread risk is incompatible with the capital protection mandate.`; break;
+        case 'lqd':        reason = `LQD's 8.3Y duration + credit spread risk violates the ${activeProfile} mandate. The 5.22% yield is attractive but insufficient to justify the convexity and spread widening risk under this profile.`; break;
+        case 'vtc':        reason = `VTC (long-term IG corporate, 13.5Y duration) carries the highest duration risk in the investment-grade universe. Excluded in all but the most aggressive yield-maxima configurations.`; break;
+        case 'bnd':        reason = `BND is the core anchor in the Balanced Income profile only. Under ${activeProfile}, the multi-sector blending (MBS + corporate + government) provides sub-optimal precision vs the targeted allocation strategy.`; break;
+        case 'agg':        reason = `AGG and BND are functionally identical; only one core aggregate is needed. BND is preferred by a marginal AUM and liquidity margin. AGG would be selected on Schwab platforms where SCHB/SCHZ ecosystems are preferred.`; break;
+        case 'schz':       reason = `SCHZ is functionally equivalent to BND and AGG. The Schwab ecosystem preference is only activated when the brokerage is Schwab (zero commission advantage vs $0 cross-platform).`; break;
+        case 'vwob':       reason = `EM sovereign bonds are not activated under the ${activeProfile} profile. The emerging market credit and geopolitical risk premium is only accepted in the yield-maxima configuration where incremental yield justifies EM sovereign exposure.`; break;
+        case 'emb':        reason = `EMB (0.39% ER) is dominated by VWOB (0.20% ER) for USD EM sovereign exposure — 19bps annual ER penalty for near-identical JPM EMBI index coverage.`; break;
+        case 'bndx':       reason = `International developed bonds (USD-hedged) carry currency hedging costs that erode the already-low 3.50% yield. Not cost-effective under any US-centric profile where domestic yields are higher.`; break;
+        case 'bwx':        reason = `BWX (unhedged international government bonds, 0.35% ER) introduces FX risk on top of already-low developed-market yields. Double headwind (low rates + expensive ER) makes it non-competitive.`; break;
+        case 'wip':        reason = `WIP (0.50% ER) is the most expensive instrument in the universe. Only justified under the DTAA cross-border mandate where non-USD real-rate diversification is explicitly required.`; break;
+        case 'tip':        reason = `TIP (0.18% ER) is displaced by SCHP (0.03% ER) for broad TIPS exposure — 15bps annual cost savings for the same Bloomberg US TIPS index coverage.`; break;
+        case 'schp':       reason = `SCHP not active in this profile — the inflation hedge allocation is not part of the ${activeProfile} strategy at ${horizonMonths}M horizon.`; break;
+        case 'vtip':       reason = `Short-term TIPS (VTIP) not active — inflation linkage is not required in the current profile, or the allocation deploys SCHP for broader TIPS coverage.`; break;
+        case 'flot':       reason = `Floating-rate bonds not activated in this configuration — the current profile's allocation achieves its rate-protection goals through direct T-bills and short ETFs without the additional corporate credit exposure from floating-rate bonds.`; break;
+        case 'flrn':       reason = `FLRN is a close substitute for FLOT. When floating-rate allocation is active, FLOT is preferred for its slightly higher AUM and tighter spreads. FLRN would be the fallback.`; break;
+        case 'pff':        reason = `PFF's preferred equity income (6.25%) requires accepting subordinated capital structure and financial-sector concentration risk. Excluded under ${activeProfile} — activated only in yield-maxima mode.`; break;
+        case 'fixed_annuity': reason = `Fixed Annuity not activated — the illiquidity penalty (surrender charges) and insurance company credit risk are not justified under the ${horizonMonths}M horizon setting. Only cost-effective for >36M commitments where the tax deferral accrual is meaningful.`; break;
+        case 'yieldstreet': reason = `Yieldstreet private credit (7.62%) carries illiquidity and structural risk incompatible with the ${activeProfile} mandate. Only deployed in cross-border DTAA profiles where non-correlated alternative income is explicitly mandated.`; break;
+        case 'arcc':       reason = `ARCC (10.60% yield, BDC structure) carries equity-like drawdown risk in credit stress. The ${activeProfile} profile's capital preservation mandate prohibits BDC equity wrapper risk.`; break;
+        case 'main':       reason = `MAIN's BDC structure and NAV premium make it incompatible with the capital protection mandate. Its 6.85% yield premium vs IG bonds reflects an equity risk premium — not a fixed income compensation.`; break;
+        case 'dst_re':     reason = `DST/Syndicated real estate (7-10 year lock-up) is not activated — the illiquidity profile and operator-dependent return structure are incompatible with a quantitative rule-based allocation engine. Tracked as a separate alternative bucket.`; break;
+        default:           reason = `Not allocated under ${activeProfile} profile at ${horizonMonths}M horizon. Base yield: ${baseYields[key]?.toFixed(2) ?? '--'}%.`;
+    }
+    return { status:'rejected', label:'Bypass', reason, color:'slate' };
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// ACCORDION RENDERER
+// ═══════════════════════════════════════════════════════════════════
+function renderAccordion(weights, logicResults, totalCapital, jurisdiction) {
+    const accordion = document.getElementById('allocationAccordion');
+    accordion.innerHTML = '';
+
+    Object.keys(STRUCTURAL_CATEGORIES).forEach(catName => {
+        const keys = STRUCTURAL_CATEGORIES[catName];
+        const selectedKeys = keys.filter(k => (weights[k] || 0) > 0).sort((a,b) => (weights[b]||0) - (weights[a]||0));
+        const primaryKey   = selectedKeys[0] || null;
+        const otherKeys    = keys.filter(k => k !== primaryKey);
+        const catWeight    = keys.reduce((s,k) => s + (weights[k]||0), 0);
+        const catAlloc     = catWeight * totalCapital;
+
+        // Determine if any "current" instruments are in this category
+        const hasCurrentAssets = keys.some(k => ASSETS_MANIFEST[k]?.statusTag === 'current');
+        const catStatusDot = hasCurrentAssets
+            ? `<span class="w-1.5 h-1.5 rounded-full bg-blue-500 flex-shrink-0" title="Has Current holdings"></span>`
+            : `<span class="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0" title="Recommended only"></span>`;
+
+        const catDiv = document.createElement('div');
+        catDiv.className = 'category-block';
+
+        // Category header
+        const headerDiv = document.createElement('div');
+        headerDiv.className = 'cat-row-header flex items-center justify-between px-5 py-2 cursor-pointer select-none transition-colors';
+        headerDiv.onclick = () => toggleAccordion(catName);
+        const isOpen = accordionOpenState[catName];
+        headerDiv.innerHTML = `
+            <div class="flex items-center gap-2.5 min-w-0">
+                <svg class="chevron-icon w-3 h-3 text-slate-400 flex-shrink-0 ${isOpen ? 'rotated' : ''}" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                </svg>
+                ${catStatusDot}
+                <span class="font-mono text-[10px] font-black tracking-widest uppercase text-slate-600 dark:text-slate-300 truncate">${catName}</span>
+                ${selectedKeys.length === 0 ? '<span class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-800 text-slate-400 uppercase">No Selection</span>' : ''}
+            </div>
+            <div class="flex items-center gap-3 flex-shrink-0 text-[10px] font-mono">
+                <span class="text-slate-400 dark:text-slate-500">${(catWeight*100).toFixed(1)}%</span>
+                <span class="font-bold text-slate-700 dark:text-slate-300">$${catAlloc.toLocaleString(undefined,{maximumFractionDigits:0})}</span>
+                <span class="text-slate-400 dark:text-slate-500 hidden sm:block">${keys.length} assets</span>
+            </div>`;
+        catDiv.appendChild(headerDiv);
+
+        // Primary (selected) row — always visible
+        if (primaryKey) catDiv.appendChild(buildAssetRow(primaryKey, weights, logicResults, totalCapital, jurisdiction, true));
+
+        // Other assets — accordion body
+        const bodyDiv = document.createElement('div');
+        bodyDiv.className = `accordion-body ${isOpen ? 'open' : ''}`;
+        bodyDiv.id = `acbody_${catName.replace(/[^a-z0-9]/gi,'_')}`;
+
+        if (otherKeys.length > 0) {
+            // Sub-header
+            const sh = document.createElement('div');
+            sh.className = 'px-5 py-1.5 bg-slate-50 dark:bg-slate-950/60 border-t border-b border-slate-200/50 dark:border-slate-800/40';
+            sh.innerHTML = `<span class="text-[9px] font-mono font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">Considered &amp; Not Selected (${otherKeys.length})</span>`;
+            bodyDiv.appendChild(sh);
+            otherKeys.forEach(k => bodyDiv.appendChild(buildAssetRow(k, weights, logicResults, totalCapital, jurisdiction, false)));
         }
 
-        function toggleTheme() {
-            const html = document.documentElement;
-            if (html.classList.contains('dark')) {
-                html.classList.remove('dark'); localStorage.setItem('fx_theme', 'light');
-            } else {
-                html.classList.add('dark'); localStorage.setItem('fx_theme', 'dark');
-            }
-            generateYieldCurvePlot();
-        }
+        catDiv.appendChild(bodyDiv);
+        accordion.appendChild(catDiv);
+    });
+}
 
-        function showAppPage(pageKey) {
-            activeAppPage = pageKey;
-            ['matrix', 'settings', 'feeds', 'diagnostics'].forEach(key => {
-                const page = document.getElementById(`page${key.charAt(0).toUpperCase() + key.slice(1)}`);
-                const button = document.getElementById(`pageBtn${key.charAt(0).toUpperCase() + key.slice(1)}`);
-                const isActive = key === pageKey;
-                page.classList.toggle('hidden', !isActive);
-                button.className = isActive
-                    ? "py-2 text-center rounded-lg transition-all bg-blue-600 text-white"
-                    : "py-2 text-center rounded-lg transition-all text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white";
+function buildAssetRow(key, weights, logicResults, totalCapital, jurisdiction, isPrimary) {
+    const w = weights[key] || 0;
+    const meta = ASSETS_MANIFEST[key];
+    const ys = getEffectiveYieldSignal(key);
+    const raw = ys.yield;
+    let net = raw;
+    if (jurisdiction === 'us-high')           { if (meta.tax !== 'State/Local Tax-Free') net = raw * 0.63; }
+    else if (jurisdiction === 'us-muni-optimized') { if (meta.tax !== 'Fed Tax-Exempt' && meta.tax !== 'State/Local Tax-Free') net = raw * 0.58; }
+    else if (jurisdiction === 'cross-border-dtaa') { net = raw * 0.85; }
+
+    const isSelected = w > 0;
+    const isManual = manualWeights[key] !== undefined;
+    const logic = logicResults[key];
+    const alloc = totalCapital * w;
+
+    // Status tag pill (current vs recommended)
+    const statusTag = meta.statusTag === 'current'
+        ? `<span class="badge-current text-[8px] font-mono font-bold px-1.5 py-0.5 rounded-full ml-1">Current</span>`
+        : `<span class="badge-recmd text-[8px] font-mono font-bold px-1.5 py-0.5 rounded-full ml-1">Rec'd</span>`;
+
+    // Selection badge
+    let selBadge = '';
+    if (logic.status === 'selected') selBadge = 'text-[8px] font-mono font-black uppercase px-1.5 py-0.5 rounded border bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/40';
+    else if (logic.status === 'locked') selBadge = 'text-[8px] font-mono font-black uppercase px-1.5 py-0.5 rounded border bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800/40';
+    else selBadge = 'text-[8px] font-mono font-black uppercase px-1.5 py-0.5 rounded border bg-slate-100 dark:bg-slate-800/80 text-slate-400 dark:text-slate-500 border-slate-200 dark:border-slate-700';
+
+    const row = document.createElement('div');
+    row.style.cssText = 'display:grid; grid-template-columns:2fr 2.6fr 1fr 0.7fr 0.7fr 1fr; align-items:start;';
+    row.className = [
+        isPrimary && isSelected ? 'selected-asset-row bg-white dark:bg-slate-900' : 'bg-slate-50/60 dark:bg-slate-950/30',
+        'border-b border-slate-200/50 dark:border-slate-800/30 cursor-pointer transition-colors hover:bg-blue-50/40 dark:hover:bg-blue-950/10',
+        !isSelected && !isPrimary ? 'opacity-70' : '',
+    ].join(' ');
+    row.onclick = e => { if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'BUTTON') openForensicModal(key); };
+
+    row.innerHTML = `
+        <div class="px-5 py-2.5">
+            <div class="flex items-start gap-1 flex-wrap">
+                <span class="font-bold text-[11px] leading-tight ${isSelected ? 'text-slate-900 dark:text-white' : 'text-slate-400 dark:text-slate-500'}">${meta.name}</span>
+                ${statusTag}
+            </div>
+            <div class="text-[9px] text-slate-400 dark:text-slate-500 font-mono mt-0.5">${meta.class}</div>
+        </div>
+        <div class="px-4 py-2.5">
+            <div class="flex items-start gap-1.5">
+                <span class="${selBadge} flex-shrink-0 mt-0.5">${logic.label}</span>
+                <span class="text-[10px] leading-snug ${isSelected ? 'text-slate-600 dark:text-slate-300' : 'text-slate-400 dark:text-slate-500'}">${logic.reason}</span>
+            </div>
+        </div>
+        <div class="px-3 py-2.5 text-center">
+            <div class="flex items-center justify-center gap-1">
+                <input type="number" step="0.5" value="${(w*100).toFixed(1)}" onchange="setManualWeight('${key}', this.value)" class="w-12 bg-slate-50 dark:bg-slate-950 text-center rounded border border-slate-200 dark:border-slate-800 text-xs font-mono">
+                ${isManual ? `<button onclick="clearSingleOverride('${key}')" title="Clear override" class="text-amber-500 hover:text-amber-700 text-[11px] leading-none">✕</button>` : ''}
+            </div>
+        </div>
+        <div class="px-3 py-2.5 text-center font-mono text-xs ${isSelected ? 'text-slate-700 dark:text-slate-200' : 'text-slate-400 dark:text-slate-500'}">
+            ${raw.toFixed(2)}%${ys.source === 'auction' ? '<span class="block text-[8px] text-amber-500 uppercase mt-0.5">Auction</span>' : ''}
+        </div>
+        <div class="px-3 py-2.5 text-center font-mono text-xs font-bold ${isSelected ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400 dark:text-slate-500'}">${net.toFixed(2)}%</div>
+        <div class="px-5 py-2.5 text-right font-mono font-bold text-xs ${isSelected ? 'text-slate-900 dark:text-white' : 'text-slate-400 dark:text-slate-500'}">$${alloc.toLocaleString(undefined,{maximumFractionDigits:0})}</div>
+    `;
+    return row;
+}
+
+function toggleAccordion(catName) {
+    accordionOpenState[catName] = !accordionOpenState[catName];
+    const body = document.getElementById(`acbody_${catName.replace(/[^a-z0-9]/gi,'_')}`);
+    if (body) body.classList.toggle('open', accordionOpenState[catName]);
+    // update chevron
+    const catBlock = body?.parentElement;
+    if (catBlock) {
+        const chev = catBlock.querySelector('.chevron-icon');
+        if (chev) chev.classList.toggle('rotated', accordionOpenState[catName]);
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// TREASURY CURVE — CANVAS RENDERER
+// ═══════════════════════════════════════════════════════════════════
+function generateYieldCurvePlot() {
+    const canvas = document.getElementById('yieldCurveCanvas');
+    if (!canvas) return;
+    const isDark = document.documentElement.classList.contains('dark');
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    canvas.width  = rect.width * dpr;
+    canvas.height = 130 * dpr;
+    canvas.style.height = '130px';
+    const ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+
+    const W = rect.width, H = 130;
+    const PAD = { top:18, right:24, bottom:32, left:44 };
+    const plotW = W - PAD.left - PAD.right;
+    const plotH = H - PAD.top - PAD.bottom;
+
+    const matPts = [
+        { label:'1M',  key:'sgov'         },
+        { label:'3M',  key:'bil'          },
+        { label:'6M',  key:'shv'          },
+        { label:'1Y',  key:'t_bills_long' },
+        { label:'2Y',  key:'note_2y'      },
+        { label:'5Y',  key:'note_5y'      },
+        { label:'10Y', key:'vgit'         },
+        { label:'20Y+',key:'tlt'          },
+    ];
+
+    const yields = matPts.map(p => getEffectiveYieldSignal(p.key).yield);
+    const minY = Math.min(...yields) - 0.35;
+    const maxY = Math.max(...yields) + 0.35;
+    const yRng = maxY - minY;
+    const xs = matPts.map((_, i) => PAD.left + (i / (matPts.length - 1)) * plotW);
+    const yp = v => PAD.top + plotH - ((v - minY) / yRng) * plotH;
+
+    // Grid
+    ctx.setLineDash([3, 4]);
+    ctx.lineWidth = 0.5;
+    for (let i = 0; i <= 4; i++) {
+        const y = PAD.top + (i / 4) * plotH;
+        const v = maxY - (i / 4) * yRng;
+        ctx.strokeStyle = isDark ? 'rgba(51,65,85,0.55)' : 'rgba(203,213,225,0.7)';
+        ctx.beginPath(); ctx.moveTo(PAD.left, y); ctx.lineTo(PAD.left + plotW, y); ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = isDark ? '#475569' : '#94a3b8';
+        ctx.font = `${8.5}px monospace`;
+        ctx.textAlign = 'right';
+        ctx.fillText(v.toFixed(1) + '%', PAD.left - 5, y + 3);
+        ctx.setLineDash([3, 4]);
+    }
+    ctx.setLineDash([]);
+
+    // Fed funds dashed line
+    const fedY = yp(3.625);
+    ctx.strokeStyle = isDark ? 'rgba(148,163,184,0.25)' : 'rgba(100,116,139,0.2)';
+    ctx.lineWidth = 1; ctx.setLineDash([5,5]);
+    ctx.beginPath(); ctx.moveTo(PAD.left, fedY); ctx.lineTo(PAD.left + plotW, fedY); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = isDark ? '#475569' : '#94a3b8';
+    ctx.font = '8px monospace'; ctx.textAlign = 'right';
+    ctx.fillText('Fed 3.63%', PAD.left + plotW, fedY - 3);
+
+    // Area fill
+    const grad = ctx.createLinearGradient(0, PAD.top, 0, PAD.top + plotH);
+    grad.addColorStop(0, isDark ? 'rgba(37,99,235,0.2)' : 'rgba(37,99,235,0.12)');
+    grad.addColorStop(1, 'rgba(37,99,235,0.00)');
+    ctx.beginPath();
+    xs.forEach((x, i) => {
+        const y = yp(yields[i]);
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.bezierCurveTo(xs[i-1]+(x-xs[i-1])*0.5, yp(yields[i-1]), x-(x-xs[i-1])*0.5, y, x, y);
+    });
+    ctx.lineTo(xs[xs.length-1], PAD.top+plotH); ctx.lineTo(xs[0], PAD.top+plotH); ctx.closePath();
+    ctx.fillStyle = grad; ctx.fill();
+
+    // Curve line
+    ctx.beginPath();
+    xs.forEach((x, i) => {
+        const y = yp(yields[i]);
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.bezierCurveTo(xs[i-1]+(x-xs[i-1])*0.5, yp(yields[i-1]), x-(x-xs[i-1])*0.5, y, x, y);
+    });
+    ctx.strokeStyle = '#2563eb'; ctx.lineWidth = 2; ctx.stroke();
+
+    // Dots + labels
+    matPts.forEach((pt, i) => {
+        const x = xs[i], y = yp(yields[i]);
+        const isAuction = getEffectiveYieldSignal(pt.key).source === 'auction';
+        ctx.beginPath(); ctx.arc(x, y, 3.5, 0, Math.PI*2);
+        ctx.fillStyle = isAuction ? '#f59e0b' : '#2563eb'; ctx.fill();
+        ctx.strokeStyle = isDark ? '#0f172a' : '#fff'; ctx.lineWidth = 1.5; ctx.stroke();
+        ctx.fillStyle = isAuction ? '#f59e0b' : (isDark ? '#93c5fd' : '#2563eb');
+        ctx.font = 'bold 8.5px monospace'; ctx.textAlign = 'center';
+        ctx.fillText(yields[i].toFixed(2)+'%', x, y - 7);
+        ctx.fillStyle = isDark ? '#64748b' : '#94a3b8';
+        ctx.font = '8px monospace';
+        ctx.fillText(pt.label, x, H - PAD.bottom + 13);
+        ctx.strokeStyle = isDark ? '#334155' : '#cbd5e1'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(x, H - PAD.bottom); ctx.lineTo(x, H - PAD.bottom + 4); ctx.stroke();
+    });
+
+    // Curve shape classification
+    const spread = yields[yields.length-1] - yields[0];
+    const statusEl = document.getElementById('curveStatusLabel');
+    if (statusEl) {
+        if (spread > 0.5)       { statusEl.textContent='Normal Continuum'; statusEl.className='text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60'; }
+        else if (spread > 0.1)  { statusEl.textContent='Flattening Bias';  statusEl.className='text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800/60'; }
+        else                    { statusEl.textContent='Inverted Regime';   statusEl.className='text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800/60'; }
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// LIVE TREASURY AUCTIONS
+// ═══════════════════════════════════════════════════════════════════
+async function fetchLiveTreasuryAuctions() {
+    const base = 'https://api.fiscaldata.treasury.gov/services/api/fiscal_service/v1/accounting/od';
+    const [upC, reC] = [document.getElementById('upcomingAuctionsContainer'), document.getElementById('recentAuctionsContainer')];
+    try {
+        const d = await fetchFiscalData(`${base}/upcoming_auctions?sort=-announcemt_date,-auction_date&page[size]=6`);
+        upC.innerHTML = '';
+        (d.data || []).forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg flex justify-between items-center';
+            div.innerHTML = `<div><span class="text-blue-600 dark:text-blue-400 font-bold text-[11px]">${item.security_term||''} ${item.security_type||'Issue'}</span><span class="block text-[9px] text-slate-400">CUSIP: ${item.cusip||'N/A'}</span></div><div class="text-right text-[10px]"><span class="text-slate-500 block">Auction: <b class="text-slate-800 dark:text-slate-200">${item.auction_date||'N/A'}</b></span><span class="text-slate-500">Settles: ${item.issue_date||'N/A'}</span></div>`;
+            upC.appendChild(div);
+        });
+        if (!(d.data||[]).length) upC.innerHTML = '<div class="text-slate-400 p-2">No upcoming announcements.</div>';
+    } catch(e) { upC.innerHTML = `<div class="text-red-500 p-2">${e.message||'Feed error'}</div>`; }
+
+    try {
+        const d = await fetchFiscalData(`${base}/auctions_query?sort=-auction_date&page[size]=24`);
+        const cleared = (d.data||[]).map(i=>({item:i,yv:getAuctionYield(i)})).filter(x=>Number.isFinite(x.yv)).slice(0,6);
+        reC.innerHTML = '';
+        if (cleared.length) {
+            applyAuctionSignals(cleared.map(({item,yv})=>({...item,yieldValue:yv})));
+            cleared.forEach(({item,yv}) => {
+                const div = document.createElement('div');
+                div.className = 'p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg flex justify-between items-center';
+                div.innerHTML = `<div><span class="text-slate-800 dark:text-slate-200 font-bold text-[11px]">${item.security_term||''} ${item.security_type||'Issue'}</span><span class="block text-[9px] text-slate-400">Awarded: ${item.auction_date||''}</span></div><div class="text-right"><span class="text-emerald-600 dark:text-emerald-400 font-black text-sm">${yv.toFixed(2)}%</span><span class="block text-[8px] text-slate-400">B/C: ${formatRatio(item.bid_to_cover_ratio)}</span></div>`;
+                reC.appendChild(div);
             });
-            saveEngineCache();
-        }
+        } else { reC.innerHTML = '<div class="text-slate-400 p-2">No recent prints.</div>'; applyAuctionSignals([]); }
+    } catch(e) { reC.innerHTML = '<div class="text-red-500 p-2">Feed error.</div>'; }
+}
 
-        function renderYieldTweakerUI() {
-            const container = document.getElementById('yieldTweakerInputsList');
-            container.innerHTML = '';
-            let countTweaked = 0;
+async function fetchFiscalData(url) {
+    const res = await fetch(url);
+    const j = await res.json().catch(()=>({}));
+    if (!res.ok) throw new Error(j.message||`HTTP ${res.status}`);
+    return j;
+}
+function parseFiscalNumber(v) { if (v===null||v===undefined||v===''||v==='null') return NaN; return Number.parseFloat(v); }
+function getAuctionYield(item) { return [item.high_yield,item.high_investment_rate,item.high_discnt_rate,item.high_rate].map(parseFiscalNumber).find(Number.isFinite); }
+function formatRatio(v) { const r=parseFiscalNumber(v); return Number.isFinite(r)?r.toFixed(2):'N/A'; }
+function classifyAuctionSignal(item) {
+    const term=`${item.security_term||''} ${item.security_term_week_year||''} ${item.security_term_day_month||''}`.toLowerCase();
+    const type=`${item.security_type||''}`.toLowerCase();
+    const wm=term.match(/(\d+)[-\s]*week/), ym=term.match(/(\d+)[-\s]*year/);
+    const weeks=wm?parseInt(wm[1]):null, years=ym?parseInt(ym[1]):null;
+    if (type.includes('bill')&&weeks!==null) { if(weeks<=17)return 't_bills_short'; if(weeks<=52)return 't_bills_long'; }
+    if (type.includes('note')&&years!==null) { if(years<=3)return 'note_2y'; if(years<=7)return 'note_5y'; }
+    return null;
+}
+function applyAuctionSignals(rows) {
+    liveAuctionSignals={};
+    rows.forEach(item=>{const k=classifyAuctionSignal(item);if(!k||liveAuctionSignals[k])return;liveAuctionSignals[k]={yield:item.yieldValue,label:`${item.security_term||''} ${item.security_type||''}`.trim(),auctionDate:item.auction_date||'N/A'};});
+    executeAttributionMatrix();
+}
+function getEffectiveYieldSignal(key) {
+    const isTweaked=baseYields[key]!==BASE_YIELDS_DEFAULT[key];
+    if(!isTweaked&&liveAuctionSignals[key]) return {yield:liveAuctionSignals[key].yield,source:'auction',meta:liveAuctionSignals[key]};
+    return {yield:baseYields[key]??0,source:isTweaked?'manual':'baseline'};
+}
 
-            Object.keys(baseYields).forEach(key => {
-                const assetMeta = ASSETS_MANIFEST[key];
-                const isTweaked = baseYields[key] !== BASE_YIELDS_DEFAULT[key];
-                if (isTweaked) countTweaked++;
+// ═══════════════════════════════════════════════════════════════════
+// UI HELPERS
+// ═══════════════════════════════════════════════════════════════════
+function updateLiveAuctionSummary(logs) {
+    const n = Object.keys(liveAuctionSignals).length;
+    const el = document.getElementById('summaryLiveAuctionSignal');
+    if (el) el.innerText = n>0 ? `${n} Curves` : 'Baseline';
+    const badge = document.getElementById('liveAuctionBadge');
+    if (badge) { if(n>0){badge.classList.remove('hidden');badge.classList.add('flex');}else{badge.classList.add('hidden');badge.classList.remove('flex');} }
+    if (n>0) Object.keys(liveAuctionSignals).forEach(k=>{const s=liveAuctionSignals[k];logs.push(`[LIVE] ${ASSETS_MANIFEST[k].name}: ${s.yield.toFixed(2)}% from ${s.label} on ${s.auctionDate}.`);});
+    const logC = document.getElementById('auditLogContainer');
+    if (logC) {
+        if (!logs.length) { logC.innerHTML='<div class="text-slate-500">No diagnostic events in current run.</div>'; return; }
+        logC.innerHTML = logs.map(l=>{let c='text-slate-300';if(l.startsWith('[WARN]'))c='text-amber-400';if(l.startsWith('[LIVE]'))c='text-emerald-400';if(l.startsWith('[SWEEP]'))c='text-blue-400';if(l.startsWith('[PROFILE]'))c='text-purple-400';if(l.startsWith('[ALLOC]'))c='text-cyan-400';return`<div class="${c}">${l}</div>`;}).join('');
+    }
+}
 
-                const row = document.createElement('div');
-                row.className = `p-2.5 rounded-xl border ${isTweaked ? 'border-amber-600/60 bg-amber-500/10 dark:bg-amber-950/20' : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/40'}`;
-                row.innerHTML = `
-                    <div class="flex justify-between items-center mb-1">
-                        <span class="text-[11px] font-bold text-slate-700 dark:text-slate-300 block truncate max-w-[210px]">${assetMeta.name}</span>
-                        <span class="text-[9px] text-slate-400 font-mono">Def: ${BASE_YIELDS_DEFAULT[key].toFixed(2)}%</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <input type="range" min="0.00" max="15.00" step="0.05" value="${baseYields[key]}" oninput="updateSingleYieldTweak('${key}', this.value)" class="flex-1 h-1 bg-slate-300 dark:bg-slate-800 rounded">
-                        <input type="number" step="0.01" value="${baseYields[key]}" onchange="updateSingleYieldTweak('${key}', this.value)" class="w-14 bg-white dark:bg-slate-900 border text-right rounded text-[11px] font-mono">
-                    </div>
-                `;
-                container.appendChild(row);
-            });
+function toggleTheme() {
+    const h = document.documentElement;
+    if (h.classList.contains('dark')) { h.classList.remove('dark'); localStorage.setItem('fx_theme','light'); }
+    else { h.classList.add('dark'); localStorage.setItem('fx_theme','dark'); }
+    generateYieldCurvePlot();
+}
 
-            const badge = document.getElementById('tweakIndicatorCount');
-            if (countTweaked > 0) { badge.innerText = countTweaked; badge.classList.remove('hidden'); }
-            else { badge.classList.add('hidden'); }
-        }
+function showAppPage(pageKey) {
+    activeAppPage = pageKey;
+    ['matrix','settings','feeds','diagnostics'].forEach(k=>{
+        const p=document.getElementById(`page${k.charAt(0).toUpperCase()+k.slice(1)}`);
+        const b=document.getElementById(`pageBtn${k.charAt(0).toUpperCase()+k.slice(1)}`);
+        const a=k===pageKey;
+        p.classList.toggle('hidden',!a);
+        b.className=a?'py-2 text-center rounded-lg transition-all bg-blue-600 text-white':'py-2 text-center rounded-lg transition-all text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white';
+    });
+    saveEngineCache();
+}
 
-        function updateSingleYieldTweak(key, value) {
-            const parsedVal = parseFloat(value);
-            if (!isNaN(parsedVal)) {
-                baseYields[key] = Math.round(parsedVal * 100) / 100;
-                saveEngineCache(); renderYieldTweakerUI(); executeAttributionMatrix();
-            }
-        }
+function renderYieldTweakerUI() {
+    const c = document.getElementById('yieldTweakerInputsList');
+    c.innerHTML = ''; let tweaked = 0;
+    Object.keys(baseYields).forEach(key=>{
+        const m=ASSETS_MANIFEST[key]; if(!m) return;
+        const isTw=baseYields[key]!==BASE_YIELDS_DEFAULT[key];
+        if(isTw)tweaked++;
+        const div=document.createElement('div');
+        div.className=`p-2.5 rounded-xl border ${isTw?'border-amber-600/60 bg-amber-500/10':'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/40'}`;
+        div.innerHTML=`<div class="flex justify-between items-center mb-1"><span class="text-[11px] font-bold text-slate-700 dark:text-slate-300 truncate max-w-[200px]">${m.name}</span><span class="text-[9px] text-slate-400 font-mono">Def: ${BASE_YIELDS_DEFAULT[key].toFixed(2)}%</span></div><div class="flex items-center gap-2"><input type="range" min="0" max="15" step="0.05" value="${baseYields[key]}" oninput="updateSingleYieldTweak('${key}',this.value)" class="flex-1 h-1 bg-slate-300 dark:bg-slate-800 rounded"><input type="number" step="0.01" value="${baseYields[key]}" onchange="updateSingleYieldTweak('${key}',this.value)" class="w-14 bg-white dark:bg-slate-900 border text-right rounded text-[11px] font-mono"></div>`;
+        c.appendChild(div);
+    });
+    const b=document.getElementById('tweakIndicatorCount');
+    if(tweaked>0){b.innerText=tweaked;b.classList.remove('hidden');}else{b.classList.add('hidden');}
+}
 
-        function resetYieldTweaks() {
-            baseYields = { ...BASE_YIELDS_DEFAULT };
-            saveEngineCache(); renderYieldTweakerUI(); executeAttributionMatrix();
-        }
+function updateSingleYieldTweak(key,val) {
+    const v=parseFloat(val);
+    if(!isNaN(v)){baseYields[key]=Math.round(v*100)/100;saveEngineCache();renderYieldTweakerUI();executeAttributionMatrix();}
+}
+function resetYieldTweaks(){baseYields={...BASE_YIELDS_DEFAULT};saveEngineCache();renderYieldTweakerUI();executeAttributionMatrix();}
 
-        function setProfile(profileKey) {
-            activeProfile = profileKey;
-            ['safety', 'balanced', 'yield'].forEach(p => {
-                const btn = document.getElementById(`prof-${p}`);
-                if (p === profileKey) {
-                    btn.className = "border py-2.5 rounded-lg text-center text-xs font-mono font-bold border-blue-600 bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400";
-                } else {
-                    btn.className = "border py-2.5 rounded-lg text-center text-xs font-mono font-bold border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-500 dark:text-slate-400";
-                }
-            });
-            saveEngineCache(); executeAttributionMatrix();
-        }
+function setProfile(p) {
+    activeProfile=p;
+    ['safety','balanced','yield'].forEach(x=>{
+        const b=document.getElementById(`prof-${x}`);
+        b.className=x===p?'border py-2.5 rounded-lg text-center text-xs font-mono font-bold border-blue-600 bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400':'border py-2.5 rounded-lg text-center text-xs font-mono font-bold border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-950 text-slate-500 dark:text-slate-400';
+    });
+    saveEngineCache();executeAttributionMatrix();
+}
 
-        function setManualWeight(key, inputPercentValue) {
-            let decimalVal = parseFloat(inputPercentValue) / 100;
-            if (isNaN(decimalVal) || decimalVal < 0) decimalVal = 0;
-            manualWeights[key] = Math.round(decimalVal * 1000) / 1000;
-            saveEngineCache(); executeAttributionMatrix();
-        }
+function setManualWeight(key,pct){let v=parseFloat(pct)/100;if(isNaN(v)||v<0)v=0;manualWeights[key]=Math.round(v*1000)/1000;saveEngineCache();executeAttributionMatrix();}
+function clearSingleOverride(key){delete manualWeights[key];saveEngineCache();executeAttributionMatrix();}
+function resetWeightOverrides(){manualWeights={};saveEngineCache();executeAttributionMatrix();}
 
-        function clearSingleOverride(key) {
-            delete manualWeights[key]; saveEngineCache(); executeAttributionMatrix();
-        }
+function openForensicModal(key){
+    const m=ASSETS_MANIFEST[key];
+    document.getElementById('modalProductName').innerText=m.name;
+    document.getElementById('modalAssetClass').innerText=m.class;
+    document.getElementById('modalCategoryBadge').innerText=m.cat;
+    document.getElementById('modalDesc').innerText=m.desc;
+    document.getElementById('modalRisk').innerText=m.risk;
+    document.getElementById('modalExpense').innerText=`${m.expense}%`;
+    document.getElementById('modalTax').innerText=m.tax;
+    document.getElementById('modalDuration').innerText=`${m.duration} Yrs`;
+    const modal=document.getElementById('forensicModal');
+    modal.classList.remove('hidden');modal.classList.add('flex');
+}
+function closeForensicModal(){
+    const modal=document.getElementById('forensicModal');
+    modal.classList.add('hidden');modal.classList.remove('flex');
+}
 
-        function resetWeightOverrides() {
-            manualWeights = {}; saveEngineCache(); executeAttributionMatrix();
-        }
-
-        function executeAttributionMatrix() {
-            const totalCapital = parseFloat(document.getElementById('capital').value) || 0;
-            const targetJurisdiction = document.getElementById('taxJurisdiction').value;
-            const horizonMonths = parseInt(document.getElementById('horizon').value) || 1;
-            const minLiquidityPct = parseFloat(document.getElementById('liquidityTarget').value) || 0;
-
-            let logs = []; let weights = {}; let autoWeights = {}; let logicLogs = {};
-            Object.keys(ASSETS_MANIFEST).forEach(k => { weights[k] = 0; autoWeights[k] = 0; });
-
-            let sweepAsset = targetJurisdiction === 'us-muni-optimized' ? "vusxx" : "spaxx";
-            autoWeights[sweepAsset] = minLiquidityPct / 100;
-
-            let remainderWeight = 1.0 - (minLiquidityPct / 100);
-            if (remainderWeight > 0) {
-                if (activeProfile === 'safety') {
-                    if (horizonMonths <= 6) {
-                        autoWeights["sgov"] += remainderWeight * 0.30;
-                        autoWeights["t_bills_short"] += remainderWeight * 0.40;
-                        autoWeights["shy"] += remainderWeight * 0.15;
-                        autoWeights["scho"] += remainderWeight * 0.15;
-                    }
-                    else if (horizonMonths <= 18) {
-                        autoWeights["t_bills_long"] += remainderWeight * 0.35;
-                        autoWeights["scho"] += remainderWeight * 0.25;
-                        autoWeights["vgsh"] += remainderWeight * 0.20;
-                        autoWeights["note_2y"] += remainderWeight * 0.20;
-                    }
-                    else {
-                        autoWeights["note_2y"] += remainderWeight * 0.35;
-                        autoWeights["note_5y"] += remainderWeight * 0.35;
-                        autoWeights["tip"] += remainderWeight * 0.20;
-                        autoWeights["vgsh"] += remainderWeight * 0.10;
-                    }
-                } else if (activeProfile === 'balanced') {
-                    autoWeights["bnd"] += remainderWeight * 0.28;
-                    autoWeights["lqd"] += remainderWeight * 0.22;
-                    autoWeights["tip"] += remainderWeight * 0.12;
-                    autoWeights["scho"] += remainderWeight * 0.13;
-                    autoWeights[targetJurisdiction === 'us-muni-optimized' ? "vwalx" : "note_2y"] += remainderWeight * 0.25;
-                } else {
-                    if (targetJurisdiction === 'cross-border-dtaa') {
-                        autoWeights["pff"] += remainderWeight * 0.20;
-                        autoWeights["wip"] += remainderWeight * 0.15;
-                        autoWeights["arcc"] += remainderWeight * 0.35;
-                        autoWeights["yieldstreet"] += remainderWeight * 0.30;
-                    }
-                    else if (targetJurisdiction === 'us-muni-optimized') {
-                        autoWeights["vwalx"] += remainderWeight * 0.35;
-                        autoWeights["pff"] += remainderWeight * 0.20;
-                        autoWeights["arcc"] += remainderWeight * 0.25;
-                        autoWeights["main"] += remainderWeight * 0.20;
-                    }
-                    else {
-                        autoWeights["pff"] += remainderWeight * 0.20;
-                        autoWeights["arcc"] += remainderWeight * 0.30;
-                        autoWeights["main"] += remainderWeight * 0.25;
-                        autoWeights["lqd"] += remainderWeight * 0.25;
-                    }
-                }
-            }
-
-            let totalManualBound = 0;
-            Object.keys(manualWeights).forEach(k => totalManualBound += manualWeights[k]);
-
-            if (totalManualBound > 1.0) {
-                logs.push(`[WARN] user overrides total over 100%. Scaling entries.`);
-                Object.keys(ASSETS_MANIFEST).forEach(k => { if (manualWeights[k] !== undefined) weights[k] = manualWeights[k] / totalManualBound; });
-            } else {
-                Object.keys(manualWeights).forEach(k => weights[k] = manualWeights[k]);
-                let availableAutoSpace = 1.0 - totalManualBound;
-                let unoverriddenAutoSum = 0;
-                Object.keys(ASSETS_MANIFEST).forEach(k => { if (manualWeights[k] === undefined) unoverriddenAutoSum += autoWeights[k]; });
-
-                if (unoverriddenAutoSum > 0) {
-                    Object.keys(ASSETS_MANIFEST).forEach(k => { if (manualWeights[k] === undefined) weights[k] = autoWeights[k] * (availableAutoSpace / unoverriddenAutoSum); });
-                } else if (availableAutoSpace > 0) {
-                    if (manualWeights[sweepAsset] === undefined) weights[sweepAsset] += availableAutoSpace;
-                }
-            }
-
-            // Fill Logic diagnostic labels
-            Object.keys(ASSETS_MANIFEST).forEach(key => {
-                if (manualWeights[key] !== undefined) { logicLogs[key] = `Locked: User Override applied.`; return; }
-                if (weights[key] > 0) logicLogs[key] = liveAuctionSignals[key] ? `Selected: Live auction print integrated into optimized baseline track.` : `Selected: Asset integrated into optimized baseline track.`;
-                else logicLogs[key] = `Bypassed: Strategy paths bypass this allocation asset.`;
-            });
-
-            const tableBody = document.getElementById('allocationTableBody');
-            tableBody.innerHTML = '';
-            let blendedPreTaxYieldAccumulator = 0; let blendedNetYieldAccumulator = 0;
-
-            Object.keys(STRUCTURAL_CATEGORIES).forEach(categoryName => {
-                const catRow = document.createElement('tr');
-                catRow.className = "bg-slate-100/90 dark:bg-slate-950/90 font-mono text-[10px] font-black tracking-wider uppercase border-y border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 sticky top-0 backdrop-blur-xs";
-                catRow.innerHTML = `<td colspan="6" class="px-6 py-2 bg-slate-100/50 dark:bg-slate-900/60 text-slate-700 dark:text-slate-300 font-bold tracking-widest">${categoryName}</td>`;
-                tableBody.appendChild(catRow);
-
-                STRUCTURAL_CATEGORIES[categoryName].forEach(key => {
-                    const w = weights[key] || 0;
-                    const meta = ASSETS_MANIFEST[key];
-                    const yieldSignal = getEffectiveYieldSignal(key);
-                    const rawBaseYield = yieldSignal.yield;
-                    const isManual = manualWeights[key] !== undefined;
-                    const isSelected = w > 0;
-
-                    let afterTaxYield = rawBaseYield;
-                    if (targetJurisdiction === 'us-high') { if (meta.tax !== 'State/Local Tax-Free') afterTaxYield = rawBaseYield * 0.63; }
-                    else if (targetJurisdiction === 'us-muni-optimized') { if (meta.tax !== 'Fed Tax-Exempt' && meta.tax !== 'State/Local Tax-Free') afterTaxYield = rawBaseYield * 0.58; }
-                    else if (targetJurisdiction === 'cross-border-dtaa') { afterTaxYield = rawBaseYield * 0.85; }
-
-                    blendedPreTaxYieldAccumulator += w * rawBaseYield;
-                    blendedNetYieldAccumulator += w * afterTaxYield;
-
-                    const rowCapAllocated = totalCapital * w;
-                    const tr = document.createElement('tr');
-                    tr.className = `transition-colors duration-150 cursor-pointer ${isSelected ? 'bg-white dark:bg-slate-900 font-medium' : 'text-slate-400 dark:text-slate-500'} border-b border-slate-200 dark:border-slate-800/40`;
-                    tr.onclick = (e) => { if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'BUTTON') openForensicModal(key); };
-                    
-                    tr.innerHTML = `
-                        <td class="px-6 py-3">
-                            <div class="font-bold text-xs ${isSelected ? 'text-slate-900 dark:text-white' : ''}">${meta.name}</div>
-                        </td>
-                        <td class="px-4 py-3 text-[10px]">
-                            <span class="inline-block text-[8px] font-mono font-black uppercase px-1.5 py-0.5 rounded ${isSelected ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'}">${isSelected ? (isManual ? 'Locked' : 'Active') : 'Bypass'}</span>
-                            ${logicLogs[key]}
-                        </td>
-                        <td class="px-3 py-2 text-center">
-                            <input type="number" step="0.5" value="${(w * 100).toFixed(1)}" onchange="setManualWeight('${key}', this.value)" class="w-12 bg-slate-50 dark:bg-slate-950 text-center rounded border border-slate-200 dark:border-slate-800 text-xs">
-                        </td>
-                        <td class="px-3 py-3 text-center font-mono">
-                            ${rawBaseYield.toFixed(2)}%
-                            ${yieldSignal.source === 'auction' ? '<span class="block mt-0.5 text-[8px] text-amber-500 uppercase tracking-wider">Auction</span>' : ''}
-                        </td>
-                        <td class="px-3 py-3 text-center font-mono">${afterTaxYield.toFixed(2)}%</td>
-                        <td class="px-6 py-3 text-right font-mono font-bold">$${rowCapAllocated.toLocaleString(undefined, {maximumFractionDigits: 0})}</td>
-                    `;
-                    tableBody.appendChild(tr);
-                });
-            });
-
-            document.getElementById('summaryGrossYield').innerText = `${blendedPreTaxYieldAccumulator.toFixed(2)}%`;
-            document.getElementById('summaryNetYield').innerText = `${blendedNetYieldAccumulator.toFixed(2)}%`;
-            updateLiveAuctionSummary(logs);
-            generateYieldCurvePlot();
-        }
-
-        function getEffectiveYieldSignal(key) {
-            const isTweaked = baseYields[key] !== BASE_YIELDS_DEFAULT[key];
-            if (!isTweaked && liveAuctionSignals[key]) {
-                return { yield: liveAuctionSignals[key].yield, source: 'auction', meta: liveAuctionSignals[key] };
-            }
-            return { yield: baseYields[key], source: isTweaked ? 'manual' : 'baseline' };
-        }
-
-        function updateLiveAuctionSummary(logs) {
-            const signalCount = Object.keys(liveAuctionSignals).length;
-            const summary = document.getElementById('summaryLiveAuctionSignal');
-            if (summary) summary.innerText = signalCount > 0 ? `${signalCount} Curves` : 'Baseline';
-
-            if (logs && signalCount > 0) {
-                Object.keys(liveAuctionSignals).forEach(key => {
-                    const signal = liveAuctionSignals[key];
-                    logs.push(`[LIVE] ${ASSETS_MANIFEST[key].name}: ${signal.yield.toFixed(2)}% from ${signal.label} auction on ${signal.auctionDate}.`);
-                });
-            }
-            const auditLogContainer = document.getElementById('auditLogContainer');
-            if (auditLogContainer) {
-                auditLogContainer.innerHTML = (logs || []).map(l => `<div>${l}</div>`).join('');
-            }
-        }
-
-        function generateYieldCurvePlot() {
-            const svg = document.getElementById('yieldCurveSvg'); if(!svg) return;
-            svg.innerHTML = '';
-            const points = [
-                { label: "1 M", yield: getEffectiveYieldSignal("sgov").yield }, { label: "3 M", yield: getEffectiveYieldSignal("bil").yield },
-                { label: "2 Y", yield: getEffectiveYieldSignal("note_2y").yield }, { label: "5 Y", yield: getEffectiveYieldSignal("note_5y").yield },
-                { label: "20 Y", yield: getEffectiveYieldSignal("tlt").yield }
-            ];
-            let pathStr = "";
-            points.forEach((pt, idx) => {
-                const x = 50 + (idx / (points.length - 1)) * 900;
-                const y = 60 - ((pt.yield - 3) / 3) * 40;
-                pathStr += (idx === 0 ? "M" : "L") + ` ${x} ${y}`;
-                svg.innerHTML += `<circle cx="${x}" cy="${y}" r="3" fill="#2563eb"/><text x="${x}" y="${y-6}" font-size="9" text-anchor="middle" fill="#059669">${pt.yield.toFixed(2)}%</text>`;
-            });
-            svg.innerHTML += `<path d="${pathStr}" fill="none" stroke="#2563eb" stroke-width="2" />`;
-        }
-
-        function openForensicModal(key) {
-            const meta = ASSETS_MANIFEST[key];
-            document.getElementById('modalProductName').innerText = meta.name;
-            document.getElementById('modalDesc').innerText = meta.desc;
-            document.getElementById('modalRisk').innerText = meta.risk;
-            document.getElementById('modalExpense').innerText = `${meta.expense}%`;
-            document.getElementById('modalTax').innerText = meta.tax;
-            document.getElementById('modalDuration').innerText = `${meta.duration} Yrs`;
-            document.getElementById('forensicModal').classList.remove('hidden');
-            document.getElementById('forensicModal').classList.add('flex');
-        }
-
-        function closeForensicModal() {
-            document.getElementById('forensicModal').classList.add('hidden');
-        }
-
-        function saveEngineCache() {
-            localStorage.setItem('fx_cache_saved', 'true');
-            localStorage.setItem('fx_capital_val', document.getElementById('capital').value);
-            localStorage.setItem('fx_jurisdiction_val', document.getElementById('taxJurisdiction').value);
-            localStorage.setItem('fx_horizon_val', document.getElementById('horizon').value);
-            localStorage.setItem('fx_liquidity_val', document.getElementById('liquidityTarget').value);
-            localStorage.setItem('fx_profile_val', activeProfile);
-            localStorage.setItem('fx_page_val', activeAppPage);
-            localStorage.setItem('fx_base_yields', JSON.stringify(baseYields));
-            localStorage.setItem('fx_manual_weights', JSON.stringify(manualWeights));
-        }
-
-        function loadEngineCache() {
-            if (localStorage.getItem('fx_cache_saved') === 'true') {
-                document.getElementById('capital').value = localStorage.getItem('fx_capital_val');
-                document.getElementById('taxJurisdiction').value = localStorage.getItem('fx_jurisdiction_val');
-                document.getElementById('horizon').value = localStorage.getItem('fx_horizon_val');
-                document.getElementById('liquidityTarget').value = localStorage.getItem('fx_liquidity_val');
-                activeProfile = localStorage.getItem('fx_profile_val') || 'safety';
-                activeAppPage = localStorage.getItem('fx_page_val') || 'matrix';
-
-                try {
-                    baseYields = { ...BASE_YIELDS_DEFAULT, ...(JSON.parse(localStorage.getItem('fx_base_yields')) || {}) };
-                    manualWeights = JSON.parse(localStorage.getItem('fx_manual_weights')) || {};
-                } catch (e) {
-                    baseYields = { ...BASE_YIELDS_DEFAULT };
-                    manualWeights = {};
-                }
-            }
-            document.getElementById('horizonVal').innerText = `${document.getElementById('horizon').value} Months`;
-            document.getElementById('liquidityVal').innerText = `${document.getElementById('liquidityTarget').value}%`;
-            setProfile(activeProfile);
-        }
-
-        function resetGlobalDefaults() {
-            const theme = localStorage.getItem('fx_theme');
-            localStorage.clear();
-            if (theme) localStorage.setItem('fx_theme', theme);
-            location.reload();
-        }
-    </script>
+function saveEngineCache(){
+    localStorage.setItem('fx_cache_saved','true');
+    localStorage.setItem('fx_capital_val',document.getElementById('capital').value);
+    localStorage.setItem('fx_jurisdiction_val',document.getElementById('taxJurisdiction').value);
+    localStorage.setItem('fx_horizon_val',document.getElementById('horizon').value);
+    localStorage.setItem('fx_liquidity_val',document.getElementById('liquidityTarget').value);
+    localStorage.setItem('fx_profile_val',activeProfile);
+    localStorage.setItem('fx_page_val',activeAppPage);
+    localStorage.setItem('fx_base_yields',JSON.stringify(baseYields));
+    localStorage.setItem('fx_manual_weights',JSON.stringify(manualWeights));
+}
+function loadEngineCache(){
+    if(localStorage.getItem('fx_cache_saved')==='true'){
+        document.getElementById('capital').value=localStorage.getItem('fx_capital_val');
+        document.getElementById('taxJurisdiction').value=localStorage.getItem('fx_jurisdiction_val');
+        document.getElementById('horizon').value=localStorage.getItem('fx_horizon_val');
+        document.getElementById('liquidityTarget').value=localStorage.getItem('fx_liquidity_val');
+        activeProfile=localStorage.getItem('fx_profile_val')||'safety';
+        activeAppPage=localStorage.getItem('fx_page_val')||'matrix';
+        try{baseYields={...BASE_YIELDS_DEFAULT,...(JSON.parse(localStorage.getItem('fx_base_yields'))||{})};manualWeights=JSON.parse(localStorage.getItem('fx_manual_weights'))||{};}
+        catch(e){baseYields={...BASE_YIELDS_DEFAULT};manualWeights={};}
+    }
+    document.getElementById('horizonVal').innerText=`${document.getElementById('horizon').value} Months`;
+    document.getElementById('liquidityVal').innerText=`${document.getElementById('liquidityTarget').value}%`;
+    setProfile(activeProfile);
+}
+function resetGlobalDefaults(){const t=localStorage.getItem('fx_theme');localStorage.clear();if(t)localStorage.setItem('fx_theme',t);location.reload();}
+</script>
 </body>
 </html>
