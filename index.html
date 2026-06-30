@@ -174,6 +174,9 @@
                         <input type="number" id="stateTaxRate" value="8" step="1" class="w-full bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-1.5 font-mono text-slate-700 dark:text-slate-300 text-xs focus:outline-none focus:border-blue-500">
                     </div>
                 </div>
+                <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-2 leading-tight">
+                    <strong class="text-slate-600 dark:text-slate-300">Why 37% Federal?</strong> This matches the top marginal federal income tax bracket in the US. By default, the engine assumes you are optimizing for maximum tax drag. Adjust this to your specific effective or marginal rate.
+                </p>
             </div>
             <div>
                 <div class="flex justify-between items-center mb-2">
@@ -196,6 +199,12 @@
                     <button id="prof-balanced" onclick="setProfile('balanced')" class="border py-2.5 rounded-lg text-center text-xs font-mono transition-all font-bold border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-950 text-slate-500 dark:text-slate-400">Balanced Income</button>
                     <button id="prof-yield"    onclick="setProfile('yield')"    class="border py-2.5 rounded-lg text-center text-xs font-mono transition-all font-bold border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-950 text-slate-500 dark:text-slate-400">Yield Maxima</button>
                 </div>
+            </div>
+            <div class="pt-4 mt-2 border-t border-slate-200 dark:border-slate-800 flex justify-end">
+                <button id="btnSaveSettings" onclick="saveSettingsUI()" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-mono text-xs font-bold rounded-lg transition-all shadow-sm flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg>
+                    Save Settings
+                </button>
             </div>
         </div>
         <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-lg shadow-sm space-y-4">
@@ -332,27 +341,27 @@ const BASE_YIELDS_DEFAULT = {
     "note_5y":       4.22,
     "tokenized_tb":  4.12,
     // Treasury ETFs
-    "sgov":          4.18,
-    "bil":           4.12,
-    "shv":           4.10,
-    "scho":          3.78,
-    "vgsh":          3.77,
+    "sgov":          3.55,
+    "bil":           3.49,
+    "shv":           3.55,
+    "scho":          3.98,
+    "vgsh":          4.12,
     "shy":           3.82,
-    "vgit":          4.25,
+    "vgit":          4.26,
     "ief":           4.30,
-    "tlt":           4.45,
+    "tlt":           4.85,
     "vtg":           4.38,
     // Municipal Bonds
-    "vwalx":         3.55,
+    "vwalx":         4.27,
     "vteb":          3.35,
     "mub":           3.38,
     // Ultra-Short & Short Corp
     "jpst":          4.80,
-    "vcsh":          4.90,
+    "vcsh":          4.68,
     "igsb":          5.00,
     "spsb":          4.95,
     // IG Corporate
-    "vcit":          5.15,
+    "vcit":          5.16,
     "lqd":           5.22,
     "vtc":           5.40,
     // Aggregate Bond Funds
@@ -672,8 +681,12 @@ function executeAttributionMatrix() {
         blendedGross += w * raw;
         blendedNet   += w * net;
     });
-    document.getElementById('summaryGrossYield').innerText = `${blendedGross.toFixed(2)}%`;
-    document.getElementById('summaryNetYield').innerText   = `${blendedNet.toFixed(2)}%`;
+    
+    const grossD = (totalCapital * blendedGross) / 100;
+    const netD = (totalCapital * blendedNet) / 100;
+
+    document.getElementById('summaryGrossYield').innerHTML = `${blendedGross.toFixed(2)}% <span class="text-[11px] text-blue-500/80 dark:text-blue-400/80 font-mono font-normal ml-1">($${grossD.toLocaleString(undefined,{maximumFractionDigits:0})})</span>`;
+    document.getElementById('summaryNetYield').innerHTML   = `${blendedNet.toFixed(2)}% <span class="text-[11px] text-emerald-500/80 dark:text-emerald-400/80 font-mono font-normal ml-1">($${netD.toLocaleString(undefined,{maximumFractionDigits:0})})</span>`;
 
     updateLiveAuctionSummary(logs);
     generateYieldCurvePlot();
@@ -1279,6 +1292,22 @@ function updateTaxFields() {
     else if(val === 'cross-border-dtaa') { fed.value = 15; st.value = 0; }
     saveEngineCache();
     executeAttributionMatrix();
+}
+
+function saveSettingsUI() {
+    saveEngineCache();
+    executeAttributionMatrix();
+    const btn = document.getElementById('btnSaveSettings');
+    if (!btn) return;
+    const origHtml = btn.innerHTML;
+    btn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Saved Successfully`;
+    btn.classList.replace('bg-blue-600', 'bg-emerald-600');
+    btn.classList.replace('hover:bg-blue-700', 'hover:bg-emerald-700');
+    setTimeout(() => {
+        btn.innerHTML = origHtml;
+        btn.classList.replace('bg-emerald-600', 'bg-blue-600');
+        btn.classList.replace('hover:bg-emerald-700', 'hover:bg-blue-700');
+    }, 2000);
 }
 
 function showAppPage(pageKey) {
