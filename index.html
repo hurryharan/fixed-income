@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fixed Income Forensic Matrix Engine</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class'
+        }
+    </script>
+    <style>
+        input[type="range"] { accent-color: #2563eb; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .dark .custom-scrollbar::-webkit-scrollbar-track { background: #020617; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 font-sans antialiased min-h-screen pb-16 transition-colors duration-200">
+
+    <div class="max-w-7xl mx-auto px-4 py-8">
+        <header class="mb-6 border-b border-slate-200 dark:border-slate-800 pb-6 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+            <div>
+                <div class="flex items-center gap-3">
+                    <h1 class="text-3xl font-black tracking-tight bg-gradient-to-r from-blue-600 via-indigo-600 to-emerald-600 dark:from-blue-400 dark:via-indigo-400 dark:to-emerald-400 bg-clip-text text-transparent">Fixed Income Risk Optimization Engine</h1>
+                    
+                    <button onclick="toggleTheme()" class="p-2 rounded-xl bg-slate-200 hover:bg-slate-300 dark:bg-slate-900 dark:hover:bg-slate-800 border border-slate-300 dark:border-slate-800 transition-all text-slate-700 dark:text-slate-300" title="Toggle Day/Night Mode">
+                        <svg id="sunIcon" class="w-4 h-4 hidden dark:block" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.343l-.707-.707m12.728 12.728A9 9 0 115.52 5.52a9 9 0 0112.91 12.91z"></path></svg>
+                        <svg id="moonIcon" class="w-4 h-4 block dark:hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+                    </button>
+                </div>
+                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Macro Verified Baselines &bull; Live Parameter Tuning &bull; Free Fiscal Data API Infrastructure Integration</p>
+            </div>
+            <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-4 py-2 rounded-xl font-mono text-xs text-slate-600 dark:text-slate-400 shadow-inner flex flex-wrap gap-4">
+                <div>Macro Epoch: <span class="text-slate-900 dark:text-white font-bold">June 30, 2026</span></div>
+                <div>Fed Funds: <span class="text-emerald-600 dark:text-emerald-400 font-bold">3.50% - 3.75%</span></div>
+                <div>2Y Treasury: <span class="text-blue-600 dark:text-blue-400 font-bold">4.11%</span></div>
+            </div>
+        </header>
+
+        <div class="mb-8 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-sm dark:shadow-xl">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-sm font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">Treasury Yield Curve Structure</h3>
+                <div id="curveStatusLabel" class="text-xs font-mono font-bold px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-950 text-emerald-600 dark:text-emerald-400 border border-slate-200 dark:border-slate-800">Normal Continuum</div>
+            </div>
+            <div class="relative w-full h-28 bg-slate-100/60 dark:bg-slate-950/60 rounded-xl p-4 flex items-center justify-center">
+                <svg id="yieldCurveSvg" class="w-full h-full overflow-visible" viewBox="0 0 1000 80" preserveAspectRatio="none"></svg>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            <div class="lg:col-span-4 space-y-6">
+                
+                <div class="bg-white dark:bg-slate-900 p-1 rounded-xl border border-slate-200 dark:border-slate-800 flex font-mono text-xs font-bold shadow-sm">
+                    <button id="tabBtnControls" onclick="switchControlTab('controls')" class="flex-1 py-2 text-center rounded-lg transition-all bg-blue-600 text-white">
+                        Portfolio Parameters
+                    </button>
+                    <button id="tabBtnTweaker" onclick="switchControlTab('tweaker')" class="flex-1 py-2 text-center rounded-lg transition-all text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white flex items-center justify-center gap-1">
+                        Yield Tweaker 
+                        <span id="tweakIndicatorCount" class="hidden bg-amber-500 text-slate-950 text-[10px] px-1.5 py-0.1 rounded-full font-black">0</span>
+                    </button>
+                </div>
+
+                <div id="panelCoreControls" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-sm dark:shadow-2xl space-y-6">
+                    <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-3">
+                        <h2 class="text-xl font-bold text-slate-900 dark:text-white tracking-wide">Core Controls</h2>
+                        <div class="flex gap-1.5">
+                            <button onclick="resetWeightOverrides()" class="text-[10px] font-mono text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 border border-slate-200 dark:border-slate-800 hover:border-blue-300 dark:hover:border-blue-900 px-2 py-0.5 rounded transition-all">Reset Weights</button>
+                            <button onclick="resetGlobalDefaults()" class="text-[10px] font-mono text-slate-500 hover:text-amber-600 dark:hover:text-amber-400 border border-slate-200 dark:border-slate-800 hover:border-amber-300 dark:hover:border-amber-900 px-2 py-0.5 rounded transition-all">Clear All</button>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">Total Capital Allocation ($)</label>
+                        <input type="number" id="capital" value="1000000" step="50000" class="w-full bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2.5 font-mono text-emerald-600 dark:text-emerald-400 text-lg focus:outline-none focus:border-blue-500 font-bold">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">Tax Jurisdiction Target</label>
+                        <select id="taxJurisdiction" class="w-full bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:border-blue-500 font-medium">
+                            <option value="us-high">US High Bracket (37% Fed + State Expat Blind)</option>
+                            <option value="us-muni-optimized">US Muni-Preferred State Exemption Strategy</option>
+                            <option value="cross-border-dtaa">US-India DTAA Optimized Investment Overlay</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between items-center mb-2">
+                            <label class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Target Horizon Span</label>
+                            <span id="horizonVal" class="text-blue-600 dark:text-blue-400 font-mono font-bold text-xs px-2.5 py-0.5 rounded-full border border-blue-200 dark:border-blue-800">12 Months</span>
+                        </div>
+                        <input type="range" id="horizon" min="1" max="36" value="12" class="w-full h-1.5 bg-slate-200 dark:bg-slate-800 rounded-lg cursor-pointer">
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between items-center mb-2">
+                            <label class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Immediate Liquidity Target</label>
+                            <span id="liquidityVal" class="text-emerald-600 dark:text-emerald-400 font-mono font-bold text-xs px-2.5 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">20%</span>
+                        </div>
+                        <input type="range" id="liquidityTarget" min="0" max="100" value="20" class="w-full h-1.5 bg-slate-200 dark:bg-slate-800 rounded-lg cursor-pointer">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">Risk Optimization Directive Profile</label>
+                        <div class="grid grid-cols-3 gap-2">
+                            <button id="prof-safety" onclick="setProfile('safety')" class="border py-2.5 rounded-xl text-center text-xs font-mono transition-all font-bold border-blue-600 bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400">Capital Protection</button>
+                            <button id="prof-balanced" onclick="setProfile('balanced')" class="border py-2.5 rounded-xl text-center text-xs font-mono transition-all font-bold border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-950 text-slate-500 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-700">Balanced Income</button>
+                            <button id="prof-yield" onclick="setProfile('yield')" class="border py-2.5 rounded-xl text-center text-xs font-mono transition-all font-bold border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-950 text-slate-500 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-700">Yield Maxima</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="panelYieldTweaker" class="hidden bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-sm dark:shadow-2xl space-y-4">
+                    <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-3">
+                        <div>
+                            <h2 class="text-base font-bold text-slate-900 dark:text-white tracking-wide">Yield Parameter Tuning</h2>
+                        </div>
+                        <button onclick="resetYieldTweaks()" class="text-[10px] font-mono text-amber-600 dark:text-amber-500 hover:text-amber-700 dark:hover:text-amber-400 border border-amber-200 dark:border-amber-900/40 hover:border-amber-300 dark:hover:border-amber-700 px-2 py-1 rounded transition-all">Reset Baselines</button>
+                    </div>
+                    <div class="space-y-3 max-h-[420px] overflow-y-auto pr-1 custom-scrollbar" id="yieldTweakerInputsList"></div>
+                </div>
+
+            </div>
+
+            <div class="lg:col-span-8 space-y-6">
+                
+                <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm dark:shadow-xl overflow-hidden">
+                    <div class="px-6 py-4 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                        <div>
+                            <h3 class="text-base font-bold text-slate-900 dark:text-white">Forensic Allocation Matrix & Yield Capture</h3>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">Tweak any % weight input to manually lock custom bounds.</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <div class="bg-white dark:bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 font-mono text-right shadow-sm">
+                                <span class="text-[10px] block text-slate-400 dark:text-slate-500 font-sans font-bold uppercase tracking-wider">Blended Pre-Tax</span>
+                                <span id="summaryGrossYield" class="text-blue-600 dark:text-blue-400 font-black text-sm">--%</span>
+                            </div>
+                            <div class="bg-white dark:bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 font-mono text-right shadow-sm">
+                                <span class="text-[10px] block text-slate-400 dark:text-slate-500 font-sans font-bold uppercase tracking-wider">Net Realized</span>
+                                <span id="summaryNetYield" class="text-emerald-600 dark:text-emerald-400 font-black text-sm">--%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto max-h-[400px] overflow-y-auto custom-scrollbar">
+                        <table class="w-full text-left border-collapse">
+                            <thead class="sticky top-0 bg-slate-100 dark:bg-slate-950 font-mono text-[10px] font-bold tracking-wider uppercase border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 z-10 shadow-sm">
+                                <tr>
+                                    <th class="px-6 py-3 w-[28%]">Asset Classification & Wrapper</th>
+                                    <th class="px-4 py-3 w-[34%]">Selection / Rejection Forensic Logic</th>
+                                    <th class="px-3 py-3 text-center w-[13%]">Weight Override</th>
+                                    <th class="px-3 py-3 text-center w-[8%]">Base Yld</th>
+                                    <th class="px-3 py-3 text-center w-[8%]">Net Yld</th>
+                                    <th class="px-6 py-3 text-right w-[11%]">Allocated</th>
+                                </tr>
+                            </thead>
+                            <tbody id="allocationTableBody" class="divide-y divide-slate-200 dark:divide-slate-800/60 text-xs"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm dark:shadow-xl overflow-hidden">
+                    <div class="px-6 py-4 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
+                        <div>
+                            <h3 class="text-sm font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 font-mono flex items-center gap-2">
+                                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                                Live Treasury Auction Pipeline & Results
+                            </h3>
+                            <p class="text-[11px] text-slate-400 dark:text-slate-500 font-sans mt-0.5">Real-time macro data streams from the Bureau of the Fiscal Service API</p>
+                        </div>
+                        <button onclick="fetchLiveTreasuryAuctions()" class="px-3 py-1 bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-[10px] font-mono font-bold rounded-lg transition-all border border-slate-300 dark:border-slate-700">
+                            Refresh Feed
+                        </button>
+                    </div>
+                    <div class="p-4 bg-slate-100/40 dark:bg-slate-950/40 border-b border-slate-200 dark:border-slate-800 grid grid-cols-2 gap-4 text-xs">
+                        <div>
+                            <span class="block text-[10px] font-mono font-bold uppercase text-slate-400 dark:text-slate-500 mb-2">Upcoming Auction Deadlines</span>
+                            <div id="upcomingAuctionsContainer" class="space-y-2 max-h-48 overflow-y-auto custom-scrollbar font-mono text-[11px]">
+                                <div class="text-slate-400 animate-pulse">Querying federal schedules...</div>
+                            </div>
+                        </div>
+                        <div>
+                            <span class="block text-[10px] font-mono font-bold uppercase text-slate-400 dark:text-slate-500 mb-2">Recent Cleared Market Prints</span>
+                            <div id="recentAuctionsContainer" class="space-y-2 max-h-48 overflow-y-auto custom-scrollbar font-mono text-[11px]">
+                                <div class="text-slate-400 animate-pulse">Fetching high yield clearings...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-sm dark:shadow-xl">
+                    <h3 class="text-sm font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-3 font-mono flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+                        Rule Engine Forensic Execution Trace Logs
+                    </h3>
+                    <div id="auditLogContainer" class="bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-4 rounded-xl font-mono text-[11px] text-slate-600 dark:text-slate-400 h-28 overflow-y-auto space-y-1.5 custom-scrollbar"></div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <div id="forensicModal" class="fixed inset-0 bg-slate-950/60 dark:bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 max-w-xl w-full rounded-2xl shadow-2xl p-6 relative space-y-4">
+            <div class="border-b border-slate-200 dark:border-slate-800 pb-3">
+                <span id="modalCategoryBadge" class="bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-400 text-[10px] font-mono font-bold px-2 py-0.5 rounded-full border border-blue-200 dark:border-blue-800">Government Sweep</span>
+                <h3 id="modalProductName" class="text-xl font-black text-slate-900 dark:text-white mt-2">Asset Name</h3>
+                <p id="modalAssetClass" class="text-xs text-slate-500 dark:text-slate-400 font-mono mt-0.5">Asset Class Wrapper</p>
+            </div>
+            <div>
+                <h4 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Functional Architecture & Mechanics</h4>
+                <p id="modalDesc" class="text-slate-700 dark:text-slate-300 text-xs leading-relaxed font-sans"></p>
+            </div>
+            <div>
+                <h4 class="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 mb-1">Forensic Attribution & Structural Risks</h4>
+                <p id="modalRisk" class="text-slate-700 dark:text-slate-300 text-xs leading-relaxed font-sans"></p>
+            </div>
+            <div class="grid grid-cols-3 gap-2 bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-200 dark:border-slate-800 font-mono text-center text-xs">
+                <div>
+                    <span class="text-[9px] text-slate-400 dark:text-slate-500 block">EXPENSE RATIO</span>
+                    <span id="modalExpense" class="text-slate-700 dark:text-slate-300 font-bold"></span>
+                </div>
+                <div>
+                    <span class="text-[9px] text-slate-400 dark:text-slate-500 block">TAX ARCHITECTURE</span>
+                    <span id="modalTax" class="text-slate-700 dark:text-slate-300 font-bold"></span>
+                </div>
+                <div>
+                    <span class="text-[9px] text-slate-400 dark:text-slate-500 block">DURATION</span>
+                    <span id="modalDuration" class="text-slate-700 dark:text-slate-300 font-bold"></span>
+                </div>
+            </div>
+            <div class="flex justify-end pt-2">
+                <button onclick="closeForensicModal()" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-white font-mono text-xs font-bold rounded-xl transition-all">Close Diagnostic Window</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const BASE_YIELDS_DEFAULT = {
+            "vmfxx": 4.15, "vusxx": 4.10, "swvxx": 4.05, "sgov": 4.18, "bil": 4.12, 
+            "shv": 4.10, "t_bills_short": 4.14, "t_bills_long": 4.11, "note_2y": 4.11, 
+            "note_5y": 4.22, "tlt": 4.45, "bnd": 4.50, "vtg": 4.38, "lqd": 5.22, 
+            "vcit": 5.15, "vteb": 3.35, "mub": 3.38, "arcc": 10.60, "main": 6.85, "yieldstreet": 7.62
+        };
+
+        const ASSETS_MANIFEST = {
+            "vmfxx": { name: "Vanguard Federal Money Market (VMFXX)", class: "Government Cash Sweep", duration: 0.08, expense: 0.11, tax: "Fully Taxable", desc: "Settlement sweep holding US government agency obligations.", risk: "Inflation risk. Minimal structural variation." },
+            "vusxx": { name: "Vanguard Treasury Money Market (VUSXX)", class: "State-Exempt Cash Sweep", duration: 0.08, expense: 0.09, tax: "State/Local Tax-Free", desc: "Maintains strict sovereign structural filter making payouts state-tax immune.", risk: "Capped yields relative to high corporate risk alternatives." },
+            "swvxx": { name: "Schwab Value Advantage Money Fund (SWVXX)", class: "Prime Cash Sweep", duration: 0.10, expense: 0.34, tax: "Fully Taxable", desc: "Invests in high-tier institutional commercial paper.", risk: "Private sector credit spread contamination under extreme market distress." },
+            "sgov": { name: "iShares Ultra-Short Treasury ETF (SGOV)", class: "Ultra-Short Treasury ETF", duration: 0.12, expense: 0.09, tax: "State/Local Tax-Free", desc: "Exchange-traded rolling pool of super-short 0-3 month US Treasury bills.", risk: "Reinvestment execution friction during unexpected rate cut regimes." },
+            "bil": { name: "SPDR Bloomberg 1-3 Month T-Bill ETF (BIL)", class: "Ultra-Short Treasury ETF", duration: 0.15, expense: 0.13, tax: "State/Local Tax-Free", desc: "Tracks investment performance of short-dated sovereign zero-coupon options.", risk: "Tracks lower end of capital preservation maturity sequence." },
+            "shv": { name: "iShares Short Treasury Bond ETF (SHV)", class: "Short Treasury ETF", duration: 0.40, expense: 0.15, tax: "State/Local Tax-Free", desc: "Maturity allocations locked into targeted 1-12 month US Treasury instruments.", risk: "Minor near-term structural capital fluctuations on sudden rate spikes." },
+            "t_bills_short": { name: "Individual Short Treasuries (4-13W T-Bills)", class: "Direct Sovereign Bills", duration: 0.18, expense: 0.00, tax: "State/Local Tax-Free", desc: "Direct allocations via TreasuryDirect or secondary secondary trading blocks.", risk: "Zero management expenses, but locks tracking control parameters directly." },
+            "t_bills_long": { name: "Individual Long Treasuries (26-52W T-Bills)", class: "Direct Sovereign Bills", duration: 0.75, expense: 0.00, tax: "State/Local Tax-Free", desc: "Locks structural absolute rate guarantees across intermediate annual spans.", risk: "Subject to capital execution lockups for duration of instrument duration." },
+            "note_2y": { name: "U.S. 2-Year Treasury Note", class: "Sovereign Bond Anchor", duration: 1.92, expense: 0.00, tax: "State/Local Tax-Free", desc: "The foundational curve anchor for medium-term capital commitments.", risk: "Direct duration exposures create mark-to-market pricing variability risks." },
+            "note_5y": { name: "U.S. 5-Year Treasury Note", class: "Sovereign Bond Anchor", duration: 4.50, expense: 0.00, tax: "State/Local Tax-Free", desc: "Intermediate benchmark sovereign tracking vehicle.", risk: "Enhanced pricing metrics sensitivity to shifted inflation baseline profiles." },
+            "tlt": { name: "iShares 20+ Year Treasury Bond ETF (TLT)", class: "Long-Duration Sovereign ETF", duration: 16.40, expense: 0.15, tax: "State/Local Tax-Free", desc: "Pure liquid play tracking macro interest velocity trends across extreme horizons.", risk: "Severe structural duration vulnerability. Convexity losses on hawkish pivots." },
+            "bnd": { name: "Vanguard Total Bond Market ETF (BND)", class: "Broad Agg Fixed Income", duration: 6.10, expense: 0.03, tax: "Blended Taxation", desc: "Massive combined multi-sector matrix tracing government, corporate, and MBS obligations.", risk: "Blends disparate internal risk variables together blindly inside index logic." },
+            "vtg": { name: "Vanguard Total Treasury ETF (VTG)", class: "Broad Sovereign ETF", duration: 5.80, expense: 0.03, tax: "State/Local Tax-Free", desc: "Blended index tracing long, intermediate, and short sovereign durations.", risk: "Exposure across all points of the matrix without custom parameter adjustments." },
+            "lqd": { name: "iShares IG Corporate ETF (LQD)", class: "High-Quality Corporate Credit", duration: 8.30, expense: 0.14, tax: "Fully Taxable", desc: "Liquid pool of blue-chip institutional credit exposures matching premium ratings.", risk: "Credit spread extension risk coupled with significant internal structural duration values." },
+            "vcit": { name: "iShares Intermediate Corporate (VCIT)", class: "High-Quality Corporate Credit", duration: 6.20, expense: 0.04, tax: "Fully Taxable", desc: "Targeted intermediate investment grade corporate issuance index tracking vehicle.", risk: "Vulnerable to systemic corporate margin structural contractions." },
+            "vteb": { name: "Vanguard Tax-Exempt Bond ETF (VTEB)", class: "Sovereign Municipal Debt", duration: 5.90, expense: 0.05, tax: "Fed Tax-Exempt", desc: "Diversified institutional selection of municipal bonds issued by local states.", risk: "Underperforms if general federal income tax structures scale downward." },
+            "mub": { name: "iShares National Muni Bond ETF (MUB)", class: "Sovereign Municipal Debt", duration: 6.00, expense: 0.07, tax: "Fed Tax-Exempt", desc: "Broad national framework index focusing on tax-insulated municipal fixed income.", risk: "Subject to regional infrastructure budgetary and legislative revisions." },
+            "arcc": { name: "Ares Capital Corp (ARCC) BDC", class: "Alternative Floating Credit", duration: 0.40, expense: 1.90, tax: "Fully Taxable", desc: "Largest liquid Business Development Corporation issuing senior floating corporate debt.", risk: "Equity wrapper exposure risks, underlying default parameters on private business debt." },
+            "main": { name: "Main Street Capital Corp (MAIN)", class: "Alternative Floating Credit", duration: 0.50, expense: 1.80, tax: "Fully Taxable", desc: "Internally managed elite investment framework target specializing in lower middle markets.", risk: "Trades at a heavy premium to net asset value allocations." },
+            "yieldstreet": { name: "Yieldstreet Alternative Income Fund", class: "Structured Private Credit", duration: 2.10, expense: 1.50, tax: "Fully Taxable", desc: "Structured platform allocation locking alternative debt structures via non-correlated strategies.", risk: "Substantial structure illiquidity constraints. Lacks secondary liquid exchange platforms." }
+        };
+
+        const STRUCTURAL_CATEGORIES = {
+            "Cash & Settlement Liquidity": ["vmfxx", "vusxx", "swvxx"],
+            "Short-Term Bills & Sovereign Wrappers": ["sgov", "bil", "shv", "t_bills_short", "t_bills_long"],
+            "Core Treasury Notes & Macro Bonds": ["note_2y", "note_5y", "tlt", "vtg"],
+            "Investment Grade Corporate Debt": ["bnd", "lqd", "vcit"],
+            "Tax-Insulated Municipal Infrastructure": ["vteb", "mub"],
+            "Private Credit & Alternative Income Assets": ["arcc", "main", "yieldstreet"]
+        };
+
+        let activeControlTab = 'controls';
+        let activeProfile = 'safety';
+        let baseYields = { ...BASE_YIELDS_DEFAULT };
+        let manualWeights = {};
+
+        window.addEventListener('DOMContentLoaded', () => {
+            loadEngineCache();
+            renderYieldTweakerUI();
+            executeAttributionMatrix();
+            fetchLiveTreasuryAuctions(); // Initialize API Call
+            
+            document.getElementById('capital').addEventListener('input', () => { saveEngineCache(); executeAttributionMatrix(); });
+            document.getElementById('taxJurisdiction').addEventListener('change', () => { saveEngineCache(); executeAttributionMatrix(); });
+            document.getElementById('horizon').addEventListener('input', (e) => {
+                document.getElementById('horizonVal').innerText = `${e.target.value} Months`;
+                saveEngineCache(); executeAttributionMatrix();
+            });
+            document.getElementById('liquidityTarget').addEventListener('input', (e) => {
+                document.getElementById('liquidityVal').innerText = `${e.target.value}%`;
+                saveEngineCache(); executeAttributionMatrix();
+            });
+        });
+
+        // LIVE TREASURY FISCAL DATA INTEGRATION LAYER
+        async function fetchLiveTreasuryAuctions() {
+            const upcomingUrl = "https://api.fiscaldata.treasury.gov/services/api/fiscal_service/v1/accounting/od/upcoming_auctions?sort=-announcement_date&page[size]=6";
+            const recentUrl = "https://api.fiscaldata.treasury.gov/services/api/fiscal_service/v1/accounting/od/auctions_query?sort=-auction_date&page[size]=6";
+            
+            const upcomingContainer = document.getElementById('upcomingAuctionsContainer');
+            const recentContainer = document.getElementById('recentAuctionsContainer');
+
+            // 1. Fetch Upcoming Pipeline
+            try {
+                const res = await fetch(upcomingUrl);
+                const json = await res.json();
+                upcomingContainer.innerHTML = '';
+                if(json.data && json.data.length > 0) {
+                    json.data.forEach(item => {
+                        const div = document.createElement('div');
+                        div.className = "p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-2xs flex justify-between items-center";
+                        div.innerHTML = `
+                            <div>
+                                <span class="text-blue-600 dark:text-blue-400 font-bold">${item.security_term || ''} ${item.security_type || 'Issue'}</span>
+                                <span class="block text-[9px] text-slate-400">CUSIP: ${item.cusip || 'N/A'}</span>
+                            </div>
+                            <div class="text-right text-[10px]">
+                                <span class="text-slate-500 block">Auction: <b class="text-slate-800 dark:text-slate-200">${item.auction_date || 'N/A'}</b></span>
+                                <span class="text-slate-500 block">Settles: ${item.issue_date || 'N/A'}</span>
+                            </div>
+                        `;
+                        upcomingContainer.appendChild(div);
+                    });
+                } else {
+                    upcomingContainer.innerHTML = '<div class="text-slate-400 p-2">No upcoming announcements discovered.</div>';
+                }
+            } catch (e) {
+                upcomingContainer.innerHTML = '<div class="text-red-500 p-2">Error connecting to Fiscal Service feed.</div>';
+            }
+
+            // 2. Fetch Recent Cleared Yield Results
+            try {
+                const res = await fetch(recentUrl);
+                const json = await res.json();
+                recentContainer.innerHTML = '';
+                if(json.data && json.data.length > 0) {
+                    json.data.forEach(item => {
+                        const rawYield = parseFloat(item.high_yield || item.high_rate || 0);
+                        const div = document.createElement('div');
+                        div.className = "p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-2xs flex justify-between items-center";
+                        div.innerHTML = `
+                            <div>
+                                <span class="text-slate-800 dark:text-slate-200 font-bold">${item.security_term || ''} ${item.security_type || 'Issue'}</span>
+                                <span class="block text-[9px] text-slate-400">Awarded: ${item.auction_date || ''}</span>
+                            </div>
+                            <div class="text-right">
+                                <span class="text-emerald-600 dark:text-emerald-400 font-black text-sm">${rawYield.toFixed(2)}%</span>
+                                <span class="block text-[8px] text-slate-400">Bid/Cover: ${parseFloat(item.bid_to_cover_ratio || 0).toFixed(2)}</span>
+                            </div>
+                        `;
+                        recentContainer.appendChild(div);
+                    });
+                } else {
+                    recentContainer.innerHTML = '<div class="text-slate-400 p-2">No recent clearing prints located.</div>';
+                }
+            } catch (e) {
+                recentContainer.innerHTML = '<div class="text-red-500 p-2">Error query execution failure.</div>';
+            }
+        }
+
+        function toggleTheme() {
+            const html = document.documentElement;
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark'); localStorage.setItem('fx_theme', 'light');
+            } else {
+                html.classList.add('dark'); localStorage.setItem('fx_theme', 'dark');
+            }
+            generateYieldCurvePlot();
+        }
+
+        function switchControlTab(tab) {
+            activeControlTab = tab;
+            const btnControls = document.getElementById('tabBtnControls');
+            const btnTweaker = document.getElementById('tabBtnTweaker');
+            const panelControls = document.getElementById('panelCoreControls');
+            const panelTweaker = document.getElementById('panelYieldTweaker');
+
+            if (tab === 'controls') {
+                btnControls.className = "flex-1 py-2 text-center rounded-lg transition-all bg-blue-600 text-white";
+                btnTweaker.className = "flex-1 py-2 text-center rounded-lg transition-all text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white flex items-center justify-center gap-1";
+                panelControls.classList.remove('hidden'); panelTweaker.classList.add('hidden');
+            } else {
+                btnTweaker.className = "flex-1 py-2 text-center rounded-lg transition-all bg-blue-600 text-white flex items-center justify-center gap-1";
+                btnControls.className = "flex-1 py-2 text-center rounded-lg transition-all text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white";
+                panelControls.classList.add('hidden'); panelTweaker.classList.remove('hidden');
+            }
+        }
+
+        function renderYieldTweakerUI() {
+            const container = document.getElementById('yieldTweakerInputsList');
+            container.innerHTML = '';
+            let countTweaked = 0;
+
+            Object.keys(baseYields).forEach(key => {
+                const assetMeta = ASSETS_MANIFEST[key];
+                const isTweaked = baseYields[key] !== BASE_YIELDS_DEFAULT[key];
+                if (isTweaked) countTweaked++;
+
+                const row = document.createElement('div');
+                row.className = `p-2.5 rounded-xl border ${isTweaked ? 'border-amber-600/60 bg-amber-500/10 dark:bg-amber-950/20' : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/40'}`;
+                row.innerHTML = `
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="text-[11px] font-bold text-slate-700 dark:text-slate-300 block truncate max-w-[210px]">${assetMeta.name}</span>
+                        <span class="text-[9px] text-slate-400 font-mono">Def: ${BASE_YIELDS_DEFAULT[key].toFixed(2)}%</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <input type="range" min="0.00" max="15.00" step="0.05" value="${baseYields[key]}" oninput="updateSingleYieldTweak('${key}', this.value)" class="flex-1 h-1 bg-slate-300 dark:bg-slate-800 rounded">
+                        <input type="number" step="0.01" value="${baseYields[key]}" onchange="updateSingleYieldTweak('${key}', this.value)" class="w-14 bg-white dark:bg-slate-900 border text-right rounded text-[11px] font-mono">
+                    </div>
+                `;
+                container.appendChild(row);
+            });
+
+            const badge = document.getElementById('tweakIndicatorCount');
+            if (countTweaked > 0) { badge.innerText = countTweaked; badge.classList.remove('hidden'); }
+            else { badge.classList.add('hidden'); }
+        }
+
+        function updateSingleYieldTweak(key, value) {
+            const parsedVal = parseFloat(value);
+            if (!isNaN(parsedVal)) {
+                baseYields[key] = Math.round(parsedVal * 100) / 100;
+                saveEngineCache(); renderYieldTweakerUI(); executeAttributionMatrix();
+            }
+        }
+
+        function resetYieldTweaks() {
+            baseYields = { ...BASE_YIELDS_DEFAULT };
+            saveEngineCache(); renderYieldTweakerUI(); executeAttributionMatrix();
+        }
+
+        function setProfile(profileKey) {
+            activeProfile = profileKey;
+            ['safety', 'balanced', 'yield'].forEach(p => {
+                const btn = document.getElementById(`prof-${p}`);
+                if (p === profileKey) {
+                    btn.className = "border py-2.5 rounded-xl text-center text-xs font-mono font-bold border-blue-600 bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400";
+                } else {
+                    btn.className = "border py-2.5 rounded-xl text-center text-xs font-mono font-bold border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-500 dark:text-slate-400";
+                }
+            });
+            saveEngineCache(); executeAttributionMatrix();
+        }
+
+        function setManualWeight(key, inputPercentValue) {
+            let decimalVal = parseFloat(inputPercentValue) / 100;
+            if (isNaN(decimalVal) || decimalVal < 0) decimalVal = 0;
+            manualWeights[key] = Math.round(decimalVal * 1000) / 1000;
+            saveEngineCache(); executeAttributionMatrix();
+        }
+
+        function clearSingleOverride(key) {
+            delete manualWeights[key]; saveEngineCache(); executeAttributionMatrix();
+        }
+
+        function resetWeightOverrides() {
+            manualWeights = {}; saveEngineCache(); executeAttributionMatrix();
+        }
+
+        function executeAttributionMatrix() {
+            const totalCapital = parseFloat(document.getElementById('capital').value) || 0;
+            const targetJurisdiction = document.getElementById('taxJurisdiction').value;
+            const horizonMonths = parseInt(document.getElementById('horizon').value) || 1;
+            const minLiquidityPct = parseFloat(document.getElementById('liquidityTarget').value) || 0;
+
+            let logs = []; let weights = {}; let autoWeights = {}; let logicLogs = {};
+            Object.keys(ASSETS_MANIFEST).forEach(k => { weights[k] = 0; autoWeights[k] = 0; });
+
+            let sweepAsset = targetJurisdiction === 'us-muni-optimized' ? "vusxx" : "vmfxx";
+            autoWeights[sweepAsset] = minLiquidityPct / 100;
+
+            let remainderWeight = 1.0 - (minLiquidityPct / 100);
+            if (remainderWeight > 0) {
+                if (activeProfile === 'safety') {
+                    if (horizonMonths <= 6) { autoWeights["sgov"] += remainderWeight * 0.50; autoWeights["t_bills_short"] += remainderWeight * 0.50; }
+                    else if (horizonMonths <= 18) { autoWeights["t_bills_long"] += remainderWeight * 0.60; autoWeights["note_2y"] += remainderWeight * 0.40; }
+                    else { autoWeights["note_2y"] += remainderWeight * 0.50; autoWeights["note_5y"] += remainderWeight * 0.50; }
+                } else if (activeProfile === 'balanced') {
+                    autoWeights["bnd"] += remainderWeight * 0.40; autoWeights["lqd"] += remainderWeight * 0.30;
+                    autoWeights[targetJurisdiction === 'us-muni-optimized' ? "vteb" : "note_2y"] += remainderWeight * 0.30;
+                } else {
+                    if (targetJurisdiction === 'cross-border-dtaa') { autoWeights["arcc"] += remainderWeight * 0.50; autoWeights["yieldstreet"] += remainderWeight * 0.50; }
+                    else { autoWeights["arcc"] += remainderWeight * 0.40; autoWeights["main"] += remainderWeight * 0.30; autoWeights["lqd"] += remainderWeight * 0.30; }
+                }
+            }
+
+            let totalManualBound = 0;
+            Object.keys(manualWeights).forEach(k => totalManualBound += manualWeights[k]);
+
+            if (totalManualBound > 1.0) {
+                logs.push(`[WARN] user overrides total over 100%. Scaling entries.`);
+                Object.keys(ASSETS_MANIFEST).forEach(k => { if (manualWeights[k] !== undefined) weights[k] = manualWeights[k] / totalManualBound; });
+            } else {
+                Object.keys(manualWeights).forEach(k => weights[k] = manualWeights[k]);
+                let availableAutoSpace = 1.0 - totalManualBound;
+                let unoverriddenAutoSum = 0;
+                Object.keys(ASSETS_MANIFEST).forEach(k => { if (manualWeights[k] === undefined) unoverriddenAutoSum += autoWeights[k]; });
+
+                if (unoverriddenAutoSum > 0) {
+                    Object.keys(ASSETS_MANIFEST).forEach(k => { if (manualWeights[k] === undefined) weights[k] = autoWeights[k] * (availableAutoSpace / unoverriddenAutoSum); });
+                } else if (availableAutoSpace > 0) {
+                    if (manualWeights[sweepAsset] === undefined) weights[sweepAsset] += availableAutoSpace;
+                }
+            }
+
+            // Fill Logic diagnostic labels
+            Object.keys(ASSETS_MANIFEST).forEach(key => {
+                if (manualWeights[key] !== undefined) { logicLogs[key] = `Locked: User Override applied.`; return; }
+                if (weights[key] > 0) logicLogs[key] = `Selected: Asset integrated into optimized baseline track.`;
+                else logicLogs[key] = `Bypassed: Strategy paths bypass this allocation asset.`;
+            });
+
+            const tableBody = document.getElementById('allocationTableBody');
+            tableBody.innerHTML = '';
+            let blendedPreTaxYieldAccumulator = 0; let blendedNetYieldAccumulator = 0;
+
+            Object.keys(STRUCTURAL_CATEGORIES).forEach(categoryName => {
+                const catRow = document.createElement('tr');
+                catRow.className = "bg-slate-100/90 dark:bg-slate-950/90 font-mono text-[10px] font-black tracking-wider uppercase border-y border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 sticky top-0 backdrop-blur-xs";
+                catRow.innerHTML = `<td colspan="6" class="px-6 py-2 bg-slate-100/50 dark:bg-slate-900/60 text-slate-700 dark:text-slate-300 font-bold tracking-widest">${categoryName}</td>`;
+                tableBody.appendChild(catRow);
+
+                STRUCTURAL_CATEGORIES[categoryName].forEach(key => {
+                    const w = weights[key] || 0;
+                    const meta = ASSETS_MANIFEST[key];
+                    const rawBaseYield = baseYields[key];
+                    const isManual = manualWeights[key] !== undefined;
+                    const isSelected = w > 0;
+
+                    let afterTaxYield = rawBaseYield;
+                    if (targetJurisdiction === 'us-high') { if (meta.tax !== 'State/Local Tax-Free') afterTaxYield = rawBaseYield * 0.63; }
+                    else if (targetJurisdiction === 'us-muni-optimized') { if (meta.tax !== 'Fed Tax-Exempt' && meta.tax !== 'State/Local Tax-Free') afterTaxYield = rawBaseYield * 0.58; }
+                    else if (targetJurisdiction === 'cross-border-dtaa') { afterTaxYield = rawBaseYield * 0.85; }
+
+                    blendedPreTaxYieldAccumulator += w * rawBaseYield;
+                    blendedNetYieldAccumulator += w * afterTaxYield;
+
+                    const rowCapAllocated = totalCapital * w;
+                    const tr = document.createElement('tr');
+                    tr.className = `transition-colors duration-150 cursor-pointer ${isSelected ? 'bg-white dark:bg-slate-900 font-medium' : 'text-slate-400 dark:text-slate-500'} border-b border-slate-200 dark:border-slate-800/40`;
+                    tr.onclick = (e) => { if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'BUTTON') openForensicModal(key); };
+                    
+                    tr.innerHTML = `
+                        <td class="px-6 py-3">
+                            <div class="font-bold text-xs ${isSelected ? 'text-slate-900 dark:text-white' : ''}">${meta.name}</div>
+                        </td>
+                        <td class="px-4 py-3 text-[10px]">
+                            <span class="inline-block text-[8px] font-mono font-black uppercase px-1.5 py-0.5 rounded ${isSelected ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'}">${isSelected ? (isManual ? 'Locked' : 'Active') : 'Bypass'}</span>
+                            ${logicLogs[key]}
+                        </td>
+                        <td class="px-3 py-2 text-center">
+                            <input type="number" step="0.5" value="${(w * 100).toFixed(1)}" onchange="setManualWeight('${key}', this.value)" class="w-12 bg-slate-50 dark:bg-slate-950 text-center rounded border border-slate-200 dark:border-slate-800 text-xs">
+                        </td>
+                        <td class="px-3 py-3 text-center font-mono">${rawBaseYield.toFixed(2)}%</td>
+                        <td class="px-3 py-3 text-center font-mono">${afterTaxYield.toFixed(2)}%</td>
+                        <td class="px-6 py-3 text-right font-mono font-bold">$${rowCapAllocated.toLocaleString(undefined, {maximumFractionDigits: 0})}</td>
+                    `;
+                    tableBody.appendChild(tr);
+                });
+            });
+
+            document.getElementById('summaryGrossYield').innerText = `${blendedPreTaxYieldAccumulator.toFixed(2)}%`;
+            document.getElementById('summaryNetYield').innerText = `${blendedNetYieldAccumulator.toFixed(2)}%`;
+            generateYieldCurvePlot();
+        }
+
+        function generateYieldCurvePlot() {
+            const svg = document.getElementById('yieldCurveSvg'); if(!svg) return;
+            svg.innerHTML = '';
+            const points = [
+                { label: "1 M", yield: baseYields["sgov"] }, { label: "3 M", yield: baseYields["bil"] },
+                { label: "2 Y", yield: baseYields["note_2y"] }, { label: "5 Y", yield: baseYields["note_5y"] },
+                { label: "20 Y", yield: baseYields["tlt"] }
+            ];
+            let pathStr = "";
+            points.forEach((pt, idx) => {
+                const x = 50 + (idx / (points.length - 1)) * 900;
+                const y = 60 - ((pt.yield - 3) / 3) * 40;
+                pathStr += (idx === 0 ? "M" : "L") + ` ${x} ${y}`;
+                svg.innerHTML += `<circle cx="${x}" cy="${y}" r="3" fill="#2563eb"/><text x="${x}" y="${y-6}" font-size="9" text-anchor="middle" fill="#059669">${pt.yield.toFixed(2)}%</text>`;
+            });
+            svg.innerHTML += `<path d="${pathStr}" fill="none" stroke="#2563eb" stroke-width="2" />`;
+        }
+
+        function openForensicModal(key) {
+            const meta = ASSETS_MANIFEST[key];
+            document.getElementById('modalProductName').innerText = meta.name;
+            document.getElementById('modalDesc').innerText = meta.desc;
+            document.getElementById('modalRisk').innerText = meta.risk;
+            document.getElementById('modalExpense').innerText = `${meta.expense}%`;
+            document.getElementById('modalTax').innerText = meta.tax;
+            document.getElementById('modalDuration').innerText = `${meta.duration} Yrs`;
+            document.getElementById('forensicModal').classList.remove('hidden');
+            document.getElementById('forensicModal').classList.add('flex');
+        }
+
+        function closeForensicModal() {
+            document.getElementById('forensicModal').classList.add('hidden');
+        }
+
+        function saveEngineCache() {
+            localStorage.setItem('fx_cache_saved', 'true');
+            localStorage.setItem('fx_capital_val', document.getElementById('capital').value);
+            localStorage.setItem('fx_jurisdiction_val', document.getElementById('taxJurisdiction').value);
+            localStorage.setItem('fx_horizon_val', document.getElementById('horizon').value);
+            localStorage.setItem('fx_liquidity_val', document.getElementById('liquidityTarget').value);
+            localStorage.setItem('fx_profile_val', activeProfile);
+        }
+
+        function loadEngineCache() {
+            if (localStorage.getItem('fx_cache_saved') === 'true') {
+                document.getElementById('capital').value = localStorage.getItem('fx_capital_val');
+                document.getElementById('taxJurisdiction').value = localStorage.getItem('fx_jurisdiction_val');
+                document.getElementById('horizon').value = localStorage.getItem('fx_horizon_val');
+                document.getElementById('liquidityTarget').value = localStorage.getItem('fx_liquidity_val');
+                activeProfile = localStorage.getItem('fx_profile_val') || 'safety';
+            }
+            setProfile(activeProfile);
+        }
+
+        function resetGlobalDefaults() { localStorage.clear(); location.reload(); }
+    </script>
+</body>
+</html>
