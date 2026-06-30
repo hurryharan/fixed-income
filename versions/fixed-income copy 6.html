@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fixed Income Forensic Matrix Engine - 20 Asset Variant</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        input[type="range"] { accent-color: #2563eb; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #020617; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+
+        /* Day Mode Global Style Tokens Override */
+        body.light-mode {
+            background-color: #f8fafc;
+            color: #1e293b;
+        }
+        body.light-mode header, 
+        body.light-mode .bg-slate-900,
+        body.light-mode #forensicModal > div {
+            background-color: #ffffff;
+            border-color: #e2e8f0;
+        }
+        body.light-mode .bg-slate-950,
+        body.light-mode .bg-slate-950\/60,
+        body.light-mode #modalTraceLog,
+        body.light-mode .bg-slate-950\/40 {
+            background-color: #f1f5f9;
+            border-color: #cbd5e1;
+            color: #1e293b;
+        }
+        body.light-mode .text-slate-400 { color: #64748b; }
+        body.light-mode .text-slate-300 { color: #334155; }
+        body.light-mode .text-slate-500 { color: #64748b; }
+        body.light-mode .text-white { color: #0f172a; }
+        body.light-mode .border-slate-800,
+        body.light-mode .border-slate-850 { border-color: #e2e8f0; }
+        body.light-mode input, body.light-mode select {
+            background-color: #ffffff;
+            border-color: #cbd5e1;
+            color: #0f172a;
+        }
+        body.light-mode tr.bg-slate-900\/90 {
+            background-color: #ffffff;
+        }
+        body.light-mode tr.bg-slate-950\/20 {
+            background-color: #f8fafc;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans antialiased min-h-screen pb-16 transition-colors duration-200">
+
+    <div class="max-w-7xl mx-auto px-4 py-8">
+        <header class="mb-6 border-b border-slate-800 pb-6 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+            <div>
+                <h1 class="text-3xl font-black tracking-tight bg-gradient-to-r from-blue-400 via-indigo-400 to-emerald-400 bg-clip-text text-transparent">Fixed Income Risk Optimization Engine</h1>
+                <p class="text-sm text-slate-400 mt-1">Forensic Attribution Matrix &bull; Full 20-Category 41-Wrapper Variant</p>
+            </div>
+            <div class="flex items-center gap-3">
+                <button onclick="toggleTheme()" class="bg-slate-900 border border-slate-800 px-3 py-2 rounded-xl text-xs font-mono font-bold hover:border-slate-700 transition-all shadow-md">
+                    Theme: <span id="themeLabel" class="text-blue-400">Dark</span>
+                </button>
+                <div class="bg-slate-900 border border-slate-800 px-4 py-2 rounded-xl font-mono text-xs text-slate-400 shadow-inner flex gap-4">
+                    <div>Active Spectrum: <span class="text-emerald-400 font-bold">20 Asset Classes</span></div>
+                    <div>State Trace: <span class="text-blue-400 font-bold">Local Cache</span></div>
+                </div>
+            </div>
+        </header>
+
+        <div class="mb-8 bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-sm font-bold uppercase tracking-wider text-slate-300">Dynamic Fixed Income Term Yield Map</h3>
+                <div id="curveStatusLabel" class="text-xs font-mono font-bold px-2.5 py-0.5 rounded-full bg-slate-950 text-slate-400 border border-slate-800">Real-Time Core Mappings</div>
+            </div>
+            <div class="relative w-full h-28 bg-slate-950/60 rounded-xl p-4 flex items-center justify-center">
+                <svg id="yieldCurveSvg" class="w-full h-full overflow-visible" viewBox="0 0 1000 80" preserveAspectRatio="none"></svg>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            <div class="lg:col-span-4 bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-2xl space-y-6 h-fit">
+                <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                    <h2 class="text-xl font-bold text-white tracking-wide">Core Controls</h2>
+                    <div class="flex gap-2">
+                        <button onclick="clearOverrides()" class="text-[10px] font-mono text-slate-500 hover:text-blue-400 border border-slate-800 hover:border-blue-900 px-2 py-0.5 rounded transition-all">Clear Overrides</button>
+                        <button onclick="resetEngineDefaults()" class="text-[10px] font-mono text-slate-500 hover:text-amber-400 border border-slate-800 hover:border-amber-900 px-2 py-0.5 rounded transition-all">Reset Cache</button>
+                    </div>
+                </div>
+                
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Total Capital Allocation ($)</label>
+                    <input type="number" id="capital" value="1400000" step="50000" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white font-mono text-lg font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Tax Jurisdiction Filter</label>
+                    <select id="taxJurisdiction" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-slate-200 font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        <option value="us_expat">US Citizen Living Abroad (Expat - State Blind)</option>
+                        <option value="us_ca">US Onshore Resident - High State Tax (CA / NY)</option>
+                        <option value="us_tx">US Onshore Resident - No State Tax (TX / FL)</option>
+                    </select>
+                </div>
+
+                <div>
+                    <div class="flex justify-between items-center mb-2">
+                        <label class="text-xs font-bold uppercase tracking-wider text-slate-400">Deployment Horizon</label>
+                        <span id="horizonLabel" class="bg-blue-950 text-blue-300 font-mono font-bold text-xs px-2.5 py-0.5 rounded-full border border-blue-800">12 Months</span>
+                    </div>
+                    <input type="range" id="horizon" min="1" max="60" value="12" class="w-full h-1.5 bg-slate-800 rounded-lg cursor-pointer">
+                    <div class="flex justify-between font-mono text-[10px] text-slate-500 mt-1">
+                        <span>1M</span>
+                        <span>12M</span>
+                        <span>24M</span>
+                        <span>60M</span>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="flex justify-between items-center mb-2">
+                        <label class="text-xs font-bold uppercase tracking-wider text-slate-400">Immediate Liquidity Target</label>
+                        <span id="liquidityLabel" class="bg-emerald-950 text-emerald-300 font-mono font-bold text-xs px-2.5 py-0.5 rounded-full border border-emerald-800 font-mono">5%</span>
+                    </div>
+                    <input type="range" id="liquidityTarget" min="0" max="100" value="5" step="5" class="w-full h-1.5 bg-slate-800 rounded-lg cursor-pointer">
+                </div>
+
+                <div>
+                    <div class="flex justify-between items-center mb-2">
+                        <label class="text-xs font-bold uppercase tracking-wider text-slate-400">Risk Appetite Dial</label>
+                        <span id="riskLabel" class="bg-indigo-950 text-indigo-300 font-mono font-bold text-xs px-2.5 py-0.5 rounded-full border border-indigo-800">Level 3</span>
+                    </div>
+                    <input type="range" id="riskDial" min="1" max="5" value="3" class="w-full h-1.5 bg-slate-800 rounded-lg cursor-pointer">
+                    <div class="flex justify-between font-mono text-[9px] text-slate-500 mt-1">
+                        <span>1: Sovereign Core</span>
+                        <span>3: Balanced Yield</span>
+                        <span>5: Aggressive Alts</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lg:col-span-8 space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="bg-gradient-to-br from-slate-900 to-slate-950 border border-slate-800 p-5 rounded-2xl shadow-xl">
+                        <div class="text-xs uppercase font-bold tracking-wider text-slate-500">Blended Portfolio Yield (Est)</div>
+                        <div id="blendedYield" class="text-4xl font-black font-mono text-emerald-400 mt-2 tracking-tight">0.00%</div>
+                    </div>
+                    <div class="bg-gradient-to-br from-slate-900 to-slate-950 border border-slate-800 p-5 rounded-2xl shadow-xl">
+                        <div class="text-xs uppercase font-bold tracking-wider text-slate-500">Projected Annual Coupon/Cash Income</div>
+                        <div id="annualIncome" class="text-3xl font-black font-mono text-blue-400 mt-2 tracking-tight">$0.00</div>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl">
+                    <div class="px-6 py-4 border-b border-slate-800 bg-slate-900/50 flex justify-between items-center">
+                        <h3 class="font-bold text-slate-200 text-sm">Allocation & Exclusion Logic Trace</h3>
+                        <span class="text-[10px] font-mono text-slate-500">Click any row to execute deep inspection</span>
+                    </div>
+                    <div class="overflow-x-auto custom-scrollbar">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-950 border-b border-slate-800 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                    <th class="px-6 py-3.5 w-5/12">Asset Category / Tickers</th>
+                                    <th class="px-6 py-3.5 text-center w-36">Allocation weight</th>
+                                    <th class="px-6 py-3.5 text-right w-20">Est. Yield</th>
+                                    <th class="px-6 py-3.5 px-4 w-5/12">Engine Attribution Decision Log</th>
+                                </tr>
+                            </thead>
+                            <tbody id="allocationRows" class="divide-y divide-slate-800 text-sm font-medium text-slate-300">
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="forensicModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-800 max-w-2xl w-full rounded-2xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+            <div class="p-6 border-b border-slate-800 bg-slate-950/40 flex justify-between items-start">
+                <div>
+                    <span id="modalBadge" class="text-[9px] font-mono font-bold tracking-widest px-2 py-0.5 rounded uppercase">STATUS</span>
+                    <h3 id="modalAssetName" class="text-2xl font-black text-white mt-2">Asset Structure</h3>
+                    <p id="modalAssetClass" class="text-xs text-slate-400 font-mono mt-0.5">Wrapper Config</p>
+                </div>
+                <button onclick="closeForensicModal()" class="text-slate-400 hover:text-white text-lg bg-slate-800 hover:bg-slate-700 w-8 h-8 rounded-xl border border-slate-700 flex items-center justify-center transition-all">&times;</button>
+            </div>
+            
+            <div class="p-6 overflow-y-auto space-y-4 custom-scrollbar text-sm">
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <div class="bg-slate-950 p-3 rounded-xl border border-slate-850 text-center">
+                        <div class="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Estimated Yield</div>
+                        <div id="modalYield" class="text-xl font-black font-mono text-emerald-400 mt-1">0.00%</div>
+                    </div>
+                    <div class="bg-slate-950 p-3 rounded-xl border border-slate-850 text-center">
+                        <div class="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Tax Profile Wrapper</div>
+                        <div id="modalTax" class="text-xs font-bold text-indigo-300 mt-2.5 truncate">Fully Taxable</div>
+                    </div>
+                    <div class="bg-slate-950 p-3 rounded-xl border border-slate-850 text-center col-span-2 md:col-span-1">
+                        <div class="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Liquidity Class</div>
+                        <div id="modalLiquidity" class="text-xs font-bold text-amber-400 mt-2.5">High</div>
+                    </div>
+                </div>
+
+                <div class="bg-slate-950 p-4 rounded-xl border border-slate-850">
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5 font-mono">Structural Operations Profile</h4>
+                    <p id="modalDescription" class="text-slate-300 text-xs leading-relaxed"></p>
+                </div>
+
+                <div class="bg-slate-950 p-4 rounded-xl border border-slate-850">
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2 font-mono">Engine Attribution Logic Trace</h4>
+                    <div id="modalTraceLog" class="p-3 bg-slate-900 border rounded-lg font-mono text-xs leading-relaxed"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Matrix Categorization Maps matching user-defined schemas exactly
+        const masterBucketSchema = {
+            cash_liquid: { title: "1. Cash, Cash Equivalents & Liquid Bank Assets", items: ["Cash & Cash Equivalents", "Certificates of Deposit (CDs)", "Bank Deposits"] },
+            sovereign_muni: { title: "2. Sovereign Debt & Tax-Exempt Municipal Structures", items: ["U.S. Treasuries", "Treasury ETFs", "Municipal Bonds", "Municipal Bond ETFs", "Inflation-Protected Bonds (TIPS)"] },
+            corporate_credit: { title: "3. Corporate Credit & Core Market Aggregates", items: ["Ultra-Short Bonds", "Short-Term Corporate Bonds", "Investment-Grade Corporate Bonds", "Aggregate Bond Funds", "Emerging Market Bonds", "International Developed Bonds", "Floating-Rate Bonds"] },
+            alternative_yield: { title: "4. Enhanced Alternative Yield & Income Vehicles", items: ["Preferred Securities", "Fixed Annuities", "Private Credit", "Business Development Companies (BDCs)", "Real Estate Income Vehicles"] }
+        };
+
+        // Core Financial Database containing all 20 categories and 41 distinct underlying tracking wrappers
+        const coreDatabase = {
+            "Cash & Cash Equivalents": { wrapper: "HYSA, VMFXX", yield: 4.25, tax: "Fully Taxable (State Exempt variant available via VUSXX)", liq: "Instant / Same-Day", desc: "Core clearing structures optimized for immediate operational transaction matching. Zero liquidity friction or settlement latency bounds." },
+            "Certificates of Deposit (CDs)": { wrapper: "Brokered CDs (9–13 month)", yield: 4.45, tax: "Fully Taxable", liq: "Maturity Restricted", desc: "Term-locked depository instruments offering enhanced yield capture over pure sweeps, secured by federal institutional backstops up to legal limits." },
+            "Bank Deposits": { wrapper: "GIFT City USD Fixed Deposits (IBUs)", yield: 4.95, tax: "Tax Optimized Offshore Framework", liq: "Term Restricted", desc: "Offshore international banking framework utilizing GIFT City structures to secure higher dollar-denominated fixed yields safely outside onshore configurations." },
+            "U.S. Treasuries": { wrapper: "2-Year T-Notes, Tokenized T-Bills (Ondo)", yield: 4.15, tax: "State/Local Tax Exempt", liq: "T+1 Settlement", desc: "Pure sovereign debt contracts issued by the US government. Provides bulletproof safety margins with zero underlying programmatic credit friction." },
+            "Treasury ETFs": { wrapper: "SGOV, BIL, SHV, VGSH, VGIT, IEF, TLT", yield: 4.30, tax: "State/Local Tax Exempt", liq: "Instant Exchange Book", desc: "Liquid indexation wrapping across full maturity spectra. Eliminates direct bond operational friction, trading natively on public market books." },
+            "Municipal Bonds": { wrapper: "VWALX", yield: 3.55, tax: "Federal Tax-Free", liq: "Secondary Book Reliant", desc: "Sub-sovereign infrastructure credit allocations deployed to pass through untaxed interest payments directly to qualifying domestic tax accounts." },
+            "Municipal Bond ETFs": { wrapper: "VTEB, MUB", yield: 3.40, tax: "Federal Tax-Free", liq: "Instant Exchange Book", desc: "Diversified index bundles capturing intermediate municipal debt structures with tight bid-ask spreads on public equity exchanges." },
+            "Inflation-Protected Bonds (TIPS)": { wrapper: "SCHP, TIP, VTIP", yield: 2.50, tax: "Federal Taxable (CPI Adjusted)", liq: "T+1 Exchange Book", desc: "Treasury instruments linked directly to consumer price indexing tracking metrics. Designed to shield real spending target power from purchasing erosion." },
+            "Ultra-Short Bonds": { wrapper: "JPST", yield: 4.60, tax: "Fully Taxable", liq: "Instant Exchange Book", desc: "Institutional-grade commercial paper and senior debt floating packages designed to capture yield premiums inside of minimal tracking bands." },
+            "Short-Term Corporate Bonds": { wrapper: "VCSH, IGSB, SPSB", yield: 4.80, tax: "Fully Taxable", liq: "Instant Exchange Book", desc: "Diversified portfolio of short-maturity high-quality corporate debt notes capturing moderate structural premium yield additions." },
+            "Investment-Grade Corporate Bonds": { wrapper: "VCIT, LQD, VTC", yield: 5.25, tax: "Fully Taxable", liq: "High Liquidity Exchange", desc: "Blue-chip corporate institutional debt allocations balancing reliable solvency filters against extended duration lines." },
+            "Aggregate Bond Funds": { wrapper: "BND, AGG, SCHZ", yield: 4.40, tax: "Fully Taxable", liq: "High Liquidity Exchange", desc: "Total market tracking matrix incorporating public corporate notes, commercial backed packages, and cross-duration treasuries." },
+            "Emerging Market Bonds": { wrapper: "VWOB, EMB", yield: 6.65, tax: "Fully Taxable", liq: "Moderate Exchange Book", desc: "Cross-border debt securities issued by industrializing state governments, capturing significant yield cushions over domestic alternatives." },
+            "International Developed Bonds": { wrapper: "BNDX, BWX", yield: 3.90, tax: "Fully Taxable", liq: "High Liquidity Exchange", desc: "Ex-US sovereign and investment-grade corporate issues deployed to smooth out geographic domestic central banking policy deviations." },
+            "Floating-Rate Bonds": { wrapper: "FLOT, FLRN", yield: 5.10, tax: "Fully Taxable", liq: "High Liquidity Exchange", desc: "Variable rate security lines that mechanically adjust coupon parameters upward alongside central banking benchmarks, providing protection against rate shocks." },
+            "Preferred Securities": { wrapper: "PFF", yield: 6.15, tax: "Fully Taxable (Qualified Potential)", liq: "High Liquidity Exchange", desc: "Hybrid balance sheet allocations occupying positions junior to classic debt packages, delivering enhanced fixed coupon targets." },
+            "Fixed Annuities": { wrapper: "5-Year Fixed Annuity", yield: 5.30, tax: "Tax-Deferred Growth Framework", liq: "Surrender Restricted", desc: "Contractual insurance framework locking in stable, multi-year compounding streams insulated from daily public pricing fluctuations." },
+            "Private Credit": { wrapper: "Yieldstreet", yield: 8.95, tax: "Fully Taxable (Ordinary Income / K-1)", liq: "Illiquid / Multi-Year Locked", desc: "Non-bank corporate originations capturing massive structural liquidity premiums via senior-secured first-lien positions on mid-sized enterprises." },
+            "Business Development Companies (BDCs)": { wrapper: "ARCC, MAIN", yield: 9.60, tax: "Fully Taxable (RIC Passthrough / 1099-DIV)", liq: "Instant Exchange Book", desc: "Public vehicles tracking middle-market corporate credit pools, forced by regulatory law to pass through 90% of taxable income streams to owners." },
+            "Real Estate Income Vehicles": { wrapper: "DST / Syndicated Multifamily", yield: 6.40, tax: "Tax Shielded via Depreciation Pass-Through", liq: "Long-Term Illiquid (5–7Y)", desc: "Direct hard asset real estate fractions generating steady cash yields heavily optimized by tax-deductible asset wear accounting logic." }
+        };
+
+        let engineCalculatedWeights = {};
+        let auditLogTrace = {};
+        let manualOverrides = {};
+
+        // Load persisted session parameters from LocalStorage
+        function loadEngineState() {
+            if(localStorage.getItem('fx_v3_cached') === 'true') {
+                document.getElementById('capital').value = localStorage.getItem('fx_v3_capital') || "1400000";
+                document.getElementById('taxJurisdiction').value = localStorage.getItem('fx_v3_jurisdiction') || "us_expat";
+                document.getElementById('horizon').value = localStorage.getItem('fx_v3_horizon') || "12";
+                document.getElementById('liquidityTarget').value = localStorage.getItem('fx_v3_liq_target') || "5";
+                document.getElementById('riskDial').value = localStorage.getItem('fx_v3_risk_dial') || "3";
+                
+                if (localStorage.getItem('fx_v3_theme') === 'light') {
+                    document.body.classList.add('light-mode');
+                    document.getElementById('themeLabel').innerText = "Light";
+                }
+                if (localStorage.getItem('fx_v3_manual_overrides')) {
+                    manualOverrides = JSON.parse(localStorage.getItem('fx_v3_manual_overrides'));
+                }
+            }
+            calculate();
+        }
+
+        // Save active session inputs to state store
+        function saveEngineState() {
+            localStorage.setItem('fx_v3_cached', 'true');
+            localStorage.setItem('fx_v3_capital', document.getElementById('capital').value);
+            localStorage.setItem('fx_v3_jurisdiction', document.getElementById('taxJurisdiction').value);
+            localStorage.setItem('fx_v3_horizon', document.getElementById('horizon').value);
+            localStorage.setItem('fx_v3_liq_target', document.getElementById('liquidityTarget').value);
+            localStorage.setItem('fx_v3_risk_dial', document.getElementById('riskDial').value);
+            localStorage.setItem('fx_v3_theme', document.body.classList.contains('light-mode') ? 'light' : 'dark');
+            localStorage.setItem('fx_v3_manual_overrides', JSON.stringify(manualOverrides));
+        }
+
+        function toggleTheme() {
+            document.body.classList.toggle('light-mode');
+            document.getElementById('themeLabel').innerText = document.body.classList.contains('light-mode') ? "Light" : "Dark";
+            saveEngineState();
+            renderYieldCurveGraph();
+        }
+
+        function applyOverride(key, val) {
+            if (val === "" || isNaN(val) || parseFloat(val) < 0) {
+                delete manualOverrides[key];
+            } else {
+                manualOverrides[key] = Math.min(100, Math.max(0, Math.round(parseFloat(val))));
+            }
+            calculate();
+        }
+
+        function clearOverrides() {
+            manualOverrides = {};
+            calculate();
+        }
+
+        function resetEngineDefaults() {
+            localStorage.clear();
+            document.body.classList.remove('light-mode');
+            document.getElementById('themeLabel').innerText = "Dark";
+            document.getElementById('capital').value = "1400000";
+            document.getElementById('taxJurisdiction').value = "us_expat";
+            document.getElementById('horizon').value = "12";
+            document.getElementById('liquidityTarget').value = "5";
+            document.getElementById('riskDial').value = "3";
+            manualOverrides = {};
+            calculate();
+        }
+
+        function inspectAssetForensics(key) {
+            const asset = coreDatabase[key];
+            const weight = engineCalculatedWeights[key] || 0;
+            const badge = document.getElementById('modalBadge');
+
+            document.getElementById('modalAssetName').innerText = key;
+            document.getElementById('modalAssetClass').innerText = `STRUCTURE WRAPPERS: ${asset.wrapper}`;
+            document.getElementById('modalYield').innerText = asset.yield.toFixed(2) + "%";
+            document.getElementById('modalTax').innerText = asset.tax;
+            document.getElementById('modalLiquidity').innerText = asset.liq;
+            document.getElementById('modalDescription').innerText = asset.desc;
+            document.getElementById('modalTraceLog').innerHTML = auditLogTrace[key];
+
+            if(weight > 0) {
+                badge.innerText = `ACTIVE ALLOCATION (${weight}%)`;
+                badge.className = "text-[10px] font-mono font-bold tracking-widest px-2.5 py-1 rounded bg-emerald-950 text-emerald-400 border border-emerald-800";
+            } else {
+                badge.innerText = "BYPASSED BY ROUTER";
+                badge.className = "text-[10px] font-mono font-bold tracking-widest px-2.5 py-1 rounded bg-slate-950 text-slate-500 border border-slate-800";
+            }
+            document.getElementById('forensicModal').classList.remove('hidden');
+        }
+
+        function closeForensicModal() {
+            document.getElementById('forensicModal').classList.add('hidden');
+        }
+
+        // Processing loop for risk dialing, allocation weighting, and state calculation
+        function calculate() {
+            saveEngineState();
+            
+            const capital = parseFloat(document.getElementById('capital').value) || 0;
+            const horizon = parseInt(document.getElementById('horizon').value);
+            const liqPct = parseInt(document.getElementById('liquidityTarget').value);
+            const jurisdiction = document.getElementById('taxJurisdiction').value;
+            const riskDial = parseInt(document.getElementById('riskDial').value);
+
+            document.getElementById('horizonLabel').innerText = horizon + " Mo";
+            document.getElementById('liquidityLabel').innerText = liqPct + "%";
+            
+            const riskModes = ["", "Sovereign Only Safety", "Conservative Fixed Core", "Balanced Matrix Yield", "Enhanced Tactical Credit", "Aggressive Alternative Alpha"];
+            document.getElementById('riskLabel').innerText = `Level ${riskDial} - ${riskModes[riskDial]}`;
+
+            let baseAutoWeights = {};
+            Object.keys(coreDatabase).forEach(k => { 
+                baseAutoWeights[k] = 0; 
+                auditLogTrace[k] = "BYPASSED BY ROUTER: Portfolio allocation vectors directed capital weight into alternative candidates based on risk level and horizon."; 
+            });
+            
+            const coreRemainder = 100 - liqPct;
+
+            // --- 1. CORE LIQUID ROUTING SYSTEM ---
+            if (liqPct > 0) {
+                if (jurisdiction === "us_ca" && riskDial <= 3) {
+                    baseAutoWeights["Cash & Cash Equivalents"] = liqPct;
+                    auditLogTrace["Cash & Cash Equivalents"] = "PASSED LIQUIDITY ROUTING: Assigned to core cash sweeps (VMFXX) to optimize immediate liquid balance targets under standard constraints.";
+                } else if (jurisdiction === "us_expat" && riskDial >= 3) {
+                    baseAutoWeights["Bank Deposits"] = liqPct;
+                    auditLogTrace["Bank Deposits"] = "PASSED LIQUIDITY ROUTING: Offshore GIFT City USD deposit framework selected to capture cross-border institutional yield premiums.";
+                } else {
+                    baseAutoWeights["Cash & Cash Equivalents"] = liqPct;
+                    auditLogTrace["Cash & Cash Equivalents"] = "PASSED LIQUIDITY ROUTING: Assigned to core liquid instruments to support instant local withdrawal targets.";
+                }
+            }
+
+            // --- 2. MULTI-SCENARIO CORE ALLOCATION LOGIC ---
+            if (coreRemainder > 0) {
+                if (riskDial === 1) {
+                    // Sovereign Core Focus
+                    if (jurisdiction === "us_ca") {
+                        baseAutoWeights["Municipal Bond ETFs"] = Math.round(coreRemainder * 0.4);
+                        baseAutoWeights["Municipal Bonds"] = Math.round(coreRemainder * 0.2);
+                        baseAutoWeights["Treasury ETFs"] = coreRemainder - baseAutoWeights["Municipal Bond ETFs"] - baseAutoWeights["Municipal Bonds"];
+                        
+                        auditLogTrace["Municipal Bond ETFs"] = "PASSED RISK ENGINE: Federal tax-exempt indexing strategy deployed to handle high-state onshore profiles.";
+                        auditLogTrace["Municipal Bonds"] = "PASSED RISK ENGINE: Direct VWALX mapping activated to optimize federal tax exemption structural lines.";
+                        auditLogTrace["Treasury ETFs"] = "PASSED RISK ENGINE: Sovereign index matching applied across liquid configurations.";
+                    } else {
+                        baseAutoWeights["U.S. Treasuries"] = Math.round(coreRemainder * 0.5);
+                        baseAutoWeights["Treasury ETFs"] = Math.round(coreRemainder * 0.3);
+                        baseAutoWeights["Inflation-Protected Bonds (TIPS)"] = coreRemainder - baseAutoWeights["U.S. Treasuries"] - baseAutoWeights["Treasury ETFs"];
+                        
+                        auditLogTrace["U.S. Treasuries"] = "PASSED RISK ENGINE: Direct contract matching (2-Year Notes / Ondo) initialized to extract clean sovereign yield lines.";
+                        auditLogTrace["Treasury ETFs"] = "PASSED RISK ENGINE: Index allocation layer added to smooth out secondary market entry friction.";
+                        auditLogTrace["Inflation-Protected Bonds (TIPS)"] = "PASSED RISK ENGINE: Real consumer price indexing protections enabled to buffer core spending power.";
+                    }
+                } 
+                else if (riskDial === 2) {
+                    // Conservative Fixed Core
+                    baseAutoWeights["U.S. Treasuries"] = Math.round(coreRemainder * 0.25);
+                    baseAutoWeights["Short-Term Corporate Bonds"] = Math.round(coreRemainder * 0.25);
+                    baseAutoWeights["Aggregate Bond Funds"] = Math.round(coreRemainder * 0.3);
+                    baseAutoWeights["International Developed Bonds"] = coreRemainder - baseAutoWeights["U.S. Treasuries"] - baseAutoWeights["Short-Term Corporate Bonds"] - baseAutoWeights["Aggregate Bond Funds"];
+                    
+                    auditLogTrace["U.S. Treasuries"] = "PASSED OPTIMIZATION ENGINE: High-grade sovereign framework embedded as a foundational risk anchor.";
+                    auditLogTrace["Short-Term Corporate Bonds"] = "PASSED OPTIMIZATION ENGINE: VCSH/IGSB high-grade corporate notes added to capture spread premiums over baseline cash.";
+                    auditLogTrace["Aggregate Bond Funds"] = "PASSED OPTIMIZATION ENGINE: Broad market aggregate index wrapper applied to institutional specifications.";
+                    auditLogTrace["International Developed Bonds"] = "PASSED OPTIMIZATION ENGINE: Ex-US currency-hedged corporate and sovereign issues added to limit cross-border central banking deviation.";
+                } 
+                else if (riskDial === 3) {
+                    // Balanced Matrix Yield
+                    baseAutoWeights["Ultra-Short Bonds"] = Math.round(coreRemainder * 0.2);
+                    baseAutoWeights["Floating-Rate Bonds"] = Math.round(coreRemainder * 0.2);
+                    baseAutoWeights["Private Credit"] = Math.round(coreRemainder * 0.2);
+                    baseAutoWeights["Business Development Companies (BDCs)"] = Math.round(coreRemainder * 0.2);
+                    baseAutoWeights["Real Estate Income Vehicles"] = coreRemainder - (baseAutoWeights["Ultra-Short Bonds"] * 4);
+
+                    if (horizon < 12) {
+                        // Re-route alternative assets if deployment window is compressed
+                        baseAutoWeights["Ultra-Short Bonds"] += baseAutoWeights["Private Credit"] + baseAutoWeights["Real Estate Income Vehicles"];
+                        auditLogTrace["Ultra-Short Bonds"] = "PASSED OPTIMIZATION ENGINE: Baseline credit weighting scaled up to absorb balances from locked alt classes under 12-month constraint bounds.";
+                        baseAutoWeights["Private Credit"] = 0;
+                        baseAutoWeights["Real Estate Income Vehicles"] = 0;
+                        auditLogTrace["Private Credit"] = "BYPASSED BY ENGINE: Portfolio lockup parameters suspended due to active deployment window under 12-months.";
+                        auditLogTrace["Real Estate Income Vehicles"] = "BYPASSED BY ENGINE: Syndication vehicles bypassed due to deployment window falling beneath minimum holding metrics.";
+                    } else {
+                        auditLogTrace["Ultra-Short Bonds"] = "PASSED OPTIMIZATION ENGINE: Short-duration liquid commercial paper matrix (JPST) applied to support alt placements.";
+                        auditLogTrace["Floating-Rate Bonds"] = "PASSED OPTIMIZATION ENGINE: Variable senior structures embedded to hedge portfolio lines against interest rate term adjustments.";
+                        auditLogTrace["Private Credit"] = "PASSED OPTIMIZATION ENGINE: Yield optimization enabled. Non-bank first-lien corporate originations mapped to harvest outsized yield curves.";
+                        auditLogTrace["Business Development Companies (BDCs)"] = "PASSED OPTIMIZATION ENGINE: Publicly traded asset-backed credit structures (ARCC/MAIN) cleared to expand distributions.";
+                        auditLogTrace["Real Estate Income Vehicles"] = "PASSED OPTIMIZATION ENGINE: Syndicated hard assets (DSTs) routed to establish depreciation-protected pass-through cash flow.";
+                    }
+                } 
+                else if (riskDial === 4) {
+                    // Enhanced Tactical Credit Focus
+                    baseAutoWeights["Investment-Grade Corporate Bonds"] = Math.round(coreRemainder * 0.25);
+                    baseAutoWeights["Floating-Rate Bonds"] = Math.round(coreRemainder * 0.25);
+                    baseAutoWeights["Preferred Securities"] = Math.round(coreRemainder * 0.15);
+                    baseAutoWeights["Private Credit"] = Math.round(coreRemainder * 0.2);
+                    baseAutoWeights["Business Development Companies (BDCs)"] = coreRemainder - baseAutoWeights["Investment-Grade Corporate Bonds"] - baseAutoWeights["Floating-Rate Bonds"] - baseAutoWeights["Preferred Securities"] - baseAutoWeights["Private Credit"];
+                    
+                    auditLogTrace["Investment-Grade Corporate Bonds"] = "TACTICAL SELECTION: High-quality blue-chip corporate debt vectors mapped to extract structural spread options.";
+                    auditLogTrace["Floating-Rate Bonds"] = "TACTICAL SELECTION: Variable rate adjustments optimized to protect credit segments from price compression.";
+                    auditLogTrace["Preferred Securities"] = "TACTICAL SELECTION: Hybrid balance sheet lines (PFF) added to prioritize fixed institutional coupon flow.";
+                    auditLogTrace["Private Credit"] = "TACTICAL SELECTION: Mid-market lending portfolios authorized to capture liquidity spread enhancements.";
+                    auditLogTrace["Business Development Companies (BDCs)"] = "TACTICAL SELECTION: Publicly listed corporate credit engines maximized to compound forward cash returns.";
+                } 
+                else if (riskDial === 5) {
+                    // Aggressive Alternative Alpha Focus
+                    baseAutoWeights["Emerging Market Bonds"] = Math.round(coreRemainder * 0.15);
+                    baseAutoWeights["Fixed Annuities"] = Math.round(coreRemainder * 0.1);
+                    baseAutoWeights["Private Credit"] = Math.round(coreRemainder * 0.3);
+                    baseAutoWeights["Business Development Companies (BDCs)"] = Math.round(coreRemainder * 0.25);
+                    baseAutoWeights["Real Estate Income Vehicles"] = coreRemainder - baseAutoWeights["Emerging Market Bonds"] - baseAutoWeights["Fixed Annuities"] - baseAutoWeights["Private Credit"] - baseAutoWeights["Business Development Companies (BDCs)"];
+                    
+                    auditLogTrace["Emerging Market Bonds"] = "ALPHA MAXIMIZER: Cross-border dollar debt allocations integrated to capture high credit spread parameters.";
+                    auditLogTrace["Fixed Annuities"] = "ALPHA MAXIMIZER: Insulated multi-year compounding streams (MYGAs) locked in to insulate the core line from equity correlations.";
+                    auditLogTrace["Private Credit"] = "ALPHA MAXIMIZER: Private credit origination pipelines maximized. Standard institutional liquid parameters fully suspended.";
+                    auditLogTrace["Business Development Companies (BDCs)"] = "ALPHA MAXIMIZER: High passthrough middle-market credit frameworks deployed to drive absolute income capacity.";
+                    auditLogTrace["Real Estate Income Vehicles"] = "ALPHA MAXIMIZER: Syndicated real estate models scaled up to shield portfolio returns with depreciation tax shelters.";
+                }
+            }
+
+            // --- 3. MANUAL OVERRIDES SYSTEM & REDISTRIBUTION MATRIX ---
+            let totalManualOverrideWeight = 0;
+            const overriddenKeys = Object.keys(manualOverrides);
+            overriddenKeys.forEach(k => totalManualOverrideWeight += manualOverrides[k]);
+
+            if (totalManualOverrideWeight > 100) {
+                // If user overrides exceed total capacity, scale down proportionally
+                Object.keys(coreDatabase).forEach(k => {
+                    if (manualOverrides[k] !== undefined) {
+                        engineCalculatedWeights[k] = Math.round((manualOverrides[k] / totalManualOverrideWeight) * 100);
+                        auditLogTrace[k] = `<span class="text-blue-400 font-bold">[OVERRIDE SCALED]</span> Normalized proportionally to enforce 100% hard capital limitation bounds.`;
+                    } else {
+                        engineCalculatedWeights[k] = 0;
+                        auditLogTrace[k] = "EXCLUDED: Forced to 0% due to active user manual overrides exceeding 100% total available allocation capacity.";
+                    }
+                });
+            } else {
+                let remainingBudget = 100 - totalManualOverrideWeight;
+                let sumNonOverriddenAutoWeights = 0;
+                Object.keys(coreDatabase).forEach(k => {
+                    if (manualOverrides[k] === undefined) sumNonOverriddenAutoWeights += baseAutoWeights[k];
+                });
+
+                Object.keys(coreDatabase).forEach(k => {
+                    if (manualOverrides[k] !== undefined) {
+                        engineCalculatedWeights[k] = manualOverrides[k];
+                        auditLogTrace[k] = `<span class="text-blue-400 font-bold">[MANUAL OVERRIDE]</span> Custom allocation target locked directly by user override input.`;
+                    } else {
+                        if (sumNonOverriddenAutoWeights > 0) {
+                            engineCalculatedWeights[k] = Math.round((baseAutoWeights[k] / sumNonOverriddenAutoWeights) * remainingBudget);
+                        } else {
+                            engineCalculatedWeights[k] = 0;
+                        }
+                    }
+                });
+
+                // Rebalance unallocated fractional residuals
+                let currentSum = Object.values(engineCalculatedWeights).reduce((a, b) => a + b, 0);
+                if (currentSum < 100) {
+                    let leftOver = 100 - currentSum;
+                    let fallbackKey = manualOverrides["Cash & Cash Equivalents"] === undefined ? "Cash & Cash Equivalents" : Object.keys(coreDatabase).find(k => manualOverrides[k] === undefined);
+                    if (fallbackKey) {
+                        engineCalculatedWeights[fallbackKey] += leftOver;
+                        if (!auditLogTrace[fallbackKey].includes("MANUAL OVERRIDE")) {
+                            auditLogTrace[fallbackKey] = "PASSED LIQUIDITY ROUTING: Absorbed remaining unallocated fractional portfolio balance margins.";
+                        }
+                    }
+                }
+            }
+
+            // Enforce hard mathematical 100% cap
+            let finalCalculatedSum = Object.values(engineCalculatedWeights).reduce((a, b) => a + b, 0);
+            if (finalCalculatedSum !== 100 && finalCalculatedSum > 0) {
+                let discrepancy = 100 - finalCalculatedSum;
+                let keys = Object.keys(engineCalculatedWeights);
+                let targetAdjustmentKey = keys.find(k => manualOverrides[k] === undefined && engineCalculatedWeights[k] > 0) 
+                                       || keys.find(k => manualOverrides[k] === undefined) 
+                                       || keys[0];
+                engineCalculatedWeights[targetAdjustmentKey] += discrepancy;
+            }
+
+            // --- 4. DATA RENDER AND INTERFACE MANAGEMENT ---
+            const tbody = document.getElementById('allocationRows');
+            tbody.innerHTML = "";
+            let blendedYieldValue = 0;
+
+            Object.keys(masterBucketSchema).forEach(bucketKey => {
+                const bucketData = masterBucketSchema[bucketKey];
+                const headerTr = document.createElement('tr');
+                headerTr.className = "bg-slate-950 border-t border-slate-800 text-slate-400 font-bold text-xs uppercase tracking-wider";
+                headerTr.innerHTML = `<td colspan="4" class="px-6 py-2.5 bg-slate-950/90 text-indigo-400 font-mono text-[11px]">${bucketData.title}</td>`;
+                tbody.appendChild(headerTr);
+
+                bucketData.items.forEach(key => {
+                    const asset = coreDatabase[key];
+                    const weight = engineCalculatedWeights[key] || 0;
+                    const isSelected = weight > 0;
+                    const dollarAllocated = capital * (weight / 100);
+                    const traceText = auditLogTrace[key];
+                    const isOverridden = manualOverrides[key] !== undefined;
+                    
+                    if (isSelected) blendedYieldValue += (asset.yield * (weight / 100));
+
+                    const tr = document.createElement('tr');
+                    tr.className = isSelected ? "bg-slate-900/90 hover:bg-slate-800 text-slate-100 border-b border-slate-800 text-xs cursor-pointer transition-all" : "bg-slate-950/20 opacity-40 hover:opacity-70 border-b border-slate-900/60 text-xs text-slate-400 cursor-pointer transition-all";
+                    
+                    const borderInputClass = isOverridden 
+                        ? "bg-blue-950/60 text-blue-400 border-blue-500 font-bold" 
+                        : "bg-slate-950/80 text-slate-300 border-slate-800 focus:border-slate-600";
+
+                    tr.innerHTML = `
+                        <td class="px-6 py-3.5" onclick="inspectAssetForensics('${key}')">
+                            <div class="font-bold ${isSelected ? 'text-white' : 'text-slate-400'}">${key}</div>
+                            <div class="text-[10px] text-slate-500 font-mono truncate max-w-[320px]">${asset.wrapper}</div>
+                        </td>
+                        <td class="px-6 py-3.5 text-center font-mono">
+                            <div class="flex flex-col items-center gap-0.5">
+                                <div class="flex items-center gap-1">
+                                    <input type="number" min="0" max="100" placeholder="${baseAutoWeights[key] || 0}" value="${isOverridden ? manualOverrides[key] : weight}" 
+                                           class="w-14 border rounded px-1.5 py-0.5 text-center text-xs font-mono focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all ${borderInputClass}"
+                                           onclick="event.stopPropagation()" 
+                                           onchange="applyOverride('${key}', this.value)">
+                                    <span class="text-[10px] text-slate-500 font-bold">%</span>
+                                </div>
+                                <span class="text-[9px] text-slate-500 font-normal">$${dollarAllocated.toLocaleString(undefined, {maximumFractionDigits:0})}</span>
+                            </div>
+                        </td>
+                        <td class="px-6 py-3.5 text-right font-mono text-emerald-400 font-bold" onclick="inspectAssetForensics('${key}')">${asset.yield.toFixed(2)}%</td>
+                        <td class="px-6 py-3.5 font-mono text-[11px] leading-snug px-4 ${isSelected ? 'text-emerald-400/90' : 'text-slate-500'}" onclick="inspectAssetForensics('${key}')">${traceText}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            });
+
+            document.getElementById('blendedYield').innerText = blendedYieldValue.toFixed(2) + "%";
+            document.getElementById('annualIncome').innerText = "$" + (capital * (blendedYieldValue / 100)).toLocaleString(undefined, {maximumFractionDigits: 0});
+            renderYieldCurveGraph();
+        }
+
+        // Generate SVG Plot mapping structural component milestones
+        function renderYieldCurveGraph() {
+            const svg = document.getElementById('yieldCurveSvg');
+            svg.innerHTML = '';
+            const pointsData = [
+                { label: "Cash Sweeps", yield: coreDatabase["Cash & Cash Equivalents"].yield },
+                { label: "Bank Deposits", yield: coreDatabase["Bank Deposits"].yield },
+                { label: "Govt Index", yield: coreDatabase["Treasury ETFs"].yield },
+                { label: "IG Corporate", yield: coreDatabase["Investment-Grade Corporate Bonds"].yield },
+                { label: "Private Credit", yield: coreDatabase["Private Credit"].yield },
+                { label: "BDC Portfolios", yield: coreDatabase["Business Development Companies (BDCs)"].yield }
+            ];
+            const width = 1000, height = 80, paddingLeft = 60, paddingRight = 40, paddingTop = 15;
+            const graphWidth = width - paddingLeft - paddingRight, graphHeight = height - paddingTop - 20;
+            const minYield = 1.0, maxYield = 11.0;
+            function getX(idx) { return paddingLeft + (idx / (pointsData.length - 1)) * graphWidth; }
+            function getY(yVal) { return paddingTop + graphHeight - ((yVal - minYield) / (maxYield - minYield)) * graphHeight; }
+
+            const isLight = document.body.classList.contains('light-mode');
+            const axisTextColor = isLight ? "#475569" : "#64748b";
+            const lineStrokeColor = isLight ? "#2563eb" : "#3b82f6";
+
+            let pathString = "";
+            pointsData.forEach((pt, idx) => {
+                const x = getX(idx), y = getY(pt.yield);
+                pathString += (idx === 0 ? "M" : "L") + ` ${x} ${y}`;
+                svg.innerHTML += `<text x="${x}" y="${height - 2}" fill="${axisTextColor}" font-family="monospace" font-size="9" text-anchor="middle">${pt.label}</text>`;
+                svg.innerHTML += `<circle cx="${x}" cy="${y}" r="3.5" fill="${lineStrokeColor}"/>`;
+                svg.innerHTML += `<text x="${x}" y="${y - 6}" fill="#34d399" font-family="monospace" font-size="9" font-weight="bold" text-anchor="middle">${pt.yield.toFixed(2)}%</text>`;
+            });
+            svg.innerHTML += `<path d="${pathString}" fill="none" stroke="${lineStrokeColor}" stroke-width="2" />`;
+        }
+
+        // Bind interactive event listeners
+        document.getElementById('capital').addEventListener('input', calculate);
+        document.getElementById('taxJurisdiction').addEventListener('change', calculate);
+        document.getElementById('horizon').addEventListener('input', calculate);
+        document.getElementById('liquidityTarget').addEventListener('input', calculate);
+        document.getElementById('riskDial').addEventListener('input', calculate);
+        
+        window.addEventListener('keydown', e => { if(e.key === 'Escape') closeForensicModal(); });
+
+        // Initialize state machine on load
+        loadEngineState();
+    </script>
+</body>
+</html>

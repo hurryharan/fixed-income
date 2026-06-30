@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fixed Income Forensic Matrix Engine</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        input[type="range"] { accent-color: #2563eb; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #020617; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans antialiased min-h-screen pb-16">
+
+    <div class="max-w-7xl mx-auto px-4 py-8">
+        <!-- Engine Header -->
+        <header class="mb-6 border-b border-slate-800 pb-6 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+            <div>
+                <h1 class="text-3xl font-black tracking-tight bg-gradient-to-r from-blue-400 via-indigo-400 to-emerald-400 bg-clip-text text-transparent">Fixed Income Risk Optimization Engine</h1>
+                <p class="text-sm text-slate-400 mt-1">Forensic Attribution Matrix &bull; Zero-Server Local State Persistence</p>
+            </div>
+            <div class="bg-slate-900 border border-slate-800 px-4 py-2 rounded-xl font-mono text-xs text-slate-400 shadow-inner flex gap-4">
+                <div>Fed Funds: <span class="text-emerald-400 font-bold">3.63%</span></div>
+                <div>Storage Layer: <span class="text-blue-400 font-bold">Browser LocalCache</span></div>
+            </div>
+        </header>
+
+        <!-- LIVE YIELD CURVE PLOT -->
+        <div class="mb-8 bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-sm font-bold uppercase tracking-wider text-slate-300">Treasury Term Structure (Yield Curve)</h3>
+                <div id="curveStatusLabel" class="text-xs font-mono font-bold px-2.5 py-0.5 rounded-full bg-slate-950 text-slate-400 border border-slate-800">Normal</div>
+            </div>
+            <div class="relative w-full h-28 bg-slate-950/60 rounded-xl p-4 flex items-center justify-center">
+                <svg id="yieldCurveSvg" class="w-full h-full overflow-visible" viewBox="0 0 1000 80" preserveAspectRatio="none"></svg>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            <!-- Left Panel: Engine Control Knobs -->
+            <div class="lg:col-span-4 bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-2xl space-y-6 h-fit">
+                <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                    <h2 class="text-xl font-bold text-white tracking-wide">Core Controls</h2>
+                    <button onclick="resetEngineDefaults()" class="text-[10px] font-mono text-slate-500 hover:text-amber-400 border border-slate-800 hover:border-amber-900 px-2 py-0.5 rounded transition-all">Clear Cache</button>
+                </div>
+                
+                <!-- Capital Input -->
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Total Capital Allocation ($)</label>
+                    <input type="number" id="capital" value="8400000" step="50000" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white font-mono text-lg font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                </div>
+
+                <!-- Tax Residency Status Selector -->
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Tax Jurisdiction Filter</label>
+                    <select id="taxJurisdiction" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-slate-200 font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        <option value="us_expat">US Citizen Living Abroad (Expat - State Blind)</option>
+                        <option value="us_ca">US Onshore Resident - High State Tax (CA / NY)</option>
+                        <option value="us_tx">US Onshore Resident - No State Tax (TX / FL)</option>
+                    </select>
+                </div>
+
+                <!-- Deployment Window Slider -->
+                <div>
+                    <div class="flex justify-between items-center mb-2">
+                        <label class="text-xs font-bold uppercase tracking-wider text-slate-400">Deployment Horizon</label>
+                        <span id="horizonLabel" class="bg-blue-950 text-blue-300 font-mono font-bold text-xs px-2.5 py-0.5 rounded-full border border-blue-800">12 Months</span>
+                    </div>
+                    <input type="range" id="horizon" min="1" max="36" value="12" class="w-full h-1.5 bg-slate-800 rounded-lg cursor-pointer">
+                    <div class="flex justify-between font-mono text-[10px] text-slate-500 mt-1">
+                        <span>1M</span>
+                        <span>12M</span>
+                        <span>24M</span>
+                        <span>36M</span>
+                    </div>
+                </div>
+
+                <!-- Target Immediate Liquidity Slider -->
+                <div>
+                    <div class="flex justify-between items-center mb-2">
+                        <label class="text-xs font-bold uppercase tracking-wider text-slate-400">Immediate Cash Target</label>
+                        <span id="liquidityLabel" class="bg-emerald-950 text-emerald-300 font-mono font-bold text-xs px-2.5 py-0.5 rounded-full border border-emerald-800">15%</span>
+                    </div>
+                    <input type="range" id="liquidityTarget" min="0" max="100" value="15" step="5" class="w-full h-1.5 bg-slate-800 rounded-lg cursor-pointer">
+                </div>
+
+                <!-- Mandate Toggle -->
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Portfolio Mandate Profile</label>
+                    <div class="grid grid-cols-1 gap-2">
+                        <button onclick="updateProfileState('safety')" id="btn-safety" class="text-left p-3 rounded-xl border border-slate-800 bg-slate-900/20 transition-all w-full">
+                            <div class="font-bold text-sm text-slate-300">Strict Capital Preservation</div>
+                        </button>
+                        <button onclick="updateProfileState('balanced')" id="btn-balanced" class="text-left p-3 rounded-xl border border-emerald-500 bg-emerald-950/40 transition-all w-full">
+                            <div class="font-bold text-sm text-emerald-400">Moderate / Yield-Optimized Blend</div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel: Matrix Dashboard -->
+            <div class="lg:col-span-8 space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="bg-gradient-to-br from-slate-900 to-slate-950 border border-slate-800 p-5 rounded-2xl shadow-xl">
+                        <div class="text-xs uppercase font-bold tracking-wider text-slate-500">Blended Net Portfolio Yield</div>
+                        <div id="blendedYield" class="text-4xl font-black font-mono text-emerald-400 mt-2 tracking-tight">0.00%</div>
+                    </div>
+                    <div class="bg-gradient-to-br from-slate-900 to-slate-950 border border-slate-800 p-5 rounded-2xl shadow-xl">
+                        <div class="text-xs uppercase font-bold tracking-wider text-slate-500">Projected Annual Cash Income</div>
+                        <div id="annualIncome" class="text-3xl font-black font-mono text-blue-400 mt-2 tracking-tight">$0.00</div>
+                    </div>
+                </div>
+
+                <!-- Master Bucket Allocator View -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl">
+                    <div class="px-6 py-4 border-b border-slate-800 bg-slate-900/50 flex justify-between items-center">
+                        <h3 class="font-bold text-slate-200 text-sm">Allocation & Exclusion Logic Trace</h3>
+                        <span class="text-[10px] font-mono text-slate-500">Click any row to execute deep inspection</span>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-950 border-b border-slate-800 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                    <th class="px-6 py-3.5 w-1/4">Instrument</th>
+                                    <th class="px-6 py-3.5 text-center w-24">Allocation</th>
+                                    <th class="px-6 py-3.5 text-right w-16">Yield</th>
+                                    <th class="px-6 py-3.5 px-4 w-1/2">Engine Exclusion/Selection Attributions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="allocationRows" class="divide-y divide-slate-800 text-sm font-medium text-slate-300">
+                                <!-- Dynamic JS Generation -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- UNIVERSAL FORENSIC MODAL -->
+    <div id="forensicModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden animate-fade-in">
+        <div class="bg-slate-900 border border-slate-800 max-w-2xl w-full rounded-2xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+            <div class="p-6 border-b border-slate-800 bg-slate-950/40 flex justify-between items-start">
+                <div>
+                    <span id="modalBadge" class="text-[9px] font-mono font-bold tracking-widest px-2 py-0.5 rounded uppercase">STATUS</span>
+                    <h3 id="modalAssetName" class="text-2xl font-black text-white mt-2">Product Name</h3>
+                    <p id="modalAssetClass" class="text-xs text-slate-400 font-mono mt-0.5">Asset Class Wrapper</p>
+                </div>
+                <button onclick="closeForensicModal()" class="text-slate-400 hover:text-white text-lg bg-slate-800 hover:bg-slate-700 w-8 h-8 rounded-xl border border-slate-700 flex items-center justify-center transition-all">&times;</button>
+            </div>
+            
+            <div class="p-6 overflow-y-auto space-y-4 custom-scrollbar text-sm">
+                <!-- Data Snapshot Grid -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="bg-slate-950 p-3 rounded-xl border border-slate-850 text-center">
+                        <div class="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Raw Yield</div>
+                        <div id="modalYield" class="text-xl font-black font-mono text-emerald-400 mt-1">0.00%</div>
+                    </div>
+                    <div class="bg-slate-950 p-3 rounded-xl border border-slate-850 text-center">
+                        <div class="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Expense Ratio</div>
+                        <div id="modalExpense" class="text-xl font-black font-mono text-amber-500 mt-1">0.00%</div>
+                    </div>
+                    <div class="bg-slate-950 p-3 rounded-xl border border-slate-850 text-center">
+                        <div class="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Duration Weight</div>
+                        <div id="modalDuration" class="text-xl font-black font-mono text-blue-400 mt-1">0.00Y</div>
+                    </div>
+                    <div class="bg-slate-950 p-3 rounded-xl border border-slate-850 text-center">
+                        <div class="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Tax Profile</div>
+                        <div id="modalTax" class="text-xs font-bold text-indigo-300 mt-2 truncate">Exempt</div>
+                    </div>
+                </div>
+
+                <!-- Core Operational Mechanics Description -->
+                <div class="bg-slate-950 p-4 rounded-xl border border-slate-850">
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5 font-mono">Structural Operations Description</h4>
+                    <p id="modalDescription" class="text-slate-300 text-xs leading-relaxed">Structural definition profile asset.</p>
+                </div>
+
+                <!-- Forensics Risk Matrix Section -->
+                <div class="bg-slate-950 p-4 rounded-xl border border-red-950/40 bg-gradient-to-r from-slate-950 to-red-950/10">
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-rose-400 mb-1.5 font-mono flex items-center gap-1.5">
+                        <span class="inline-block w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                        Structural Risk & Volatility Profile
+                    </h4>
+                    <p id="modalRisk" class="text-slate-300 text-xs leading-relaxed">Risk parameters mapping.</p>
+                </div>
+
+                <!-- Forensic Rules Verdict Log -->
+                <div class="bg-slate-950 p-4 rounded-xl border border-slate-850">
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2 font-mono">Engine Attribution Decision Log</h4>
+                    <div id="modalTraceLog" class="p-3 bg-slate-900 border rounded-lg font-mono text-xs leading-relaxed">Attribution string tracing framework.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const masterBucketSchema = {
+            immediate_cash: { title: "1. Immediate Liquidity & Cash Stacks", items: ["Short T-Bills", "VUSXX", "VMFXX", "SWVXX", "SGOV", "SPAXX", "HYSA Reserves", "Brokered CDs (Short-Term)"] },
+            short_horizon: { title: "2. Fixed Income Core / Target Mandates", items: ["Long T-Bills", "2-Year Note", "SCHO", "VGSH", "SHY", "JPST", "Target-Maturity Corp ETFs", "Muni Bond Fund (VWALX)", "Fixed Annuity (5-Year)", "Preferred Stock ETF (PFF)", "Broad Investment Grade (LQD)", "Broad High-Yield Junk (HYG)"] },
+            extended_macro: { title: "3. Equity Overlays, RE Blocks & Alternatives", items: ["SCHD/VYM Dividends", "Equities Active Covered Calls", "RSU Target Covered Calls", "Covered Calls Overlay Premium", "DST/Syndicated MF RE", "Private Credit (Yieldstreet)", "BDCs (ARCC/MAIN Mix)", "Tokenized T-Bills (Ondo)", "Physical Gold (IAU)", "Bitcoin Core", "Niti Equity Floor", "VTG", "TIP", "WIP"] }
+        };
+
+        const coreDatabase = {
+            // Original Cash Stack
+            "Short T-Bills": { name: "Individual Short-Term Treasuries (4-13 Week T-Bills)", yield: 4.15, duration: 0.15, class: "Sovereign Asset", expense: 0.00, tax: "State/Local Tax-Free", desc: "Direct sovereign obligation of the US Government holding no tracking error or expense overhead.", risk: "Zero structural credit risk. Main threat is Reinvestment Risk: if macro rates slide, subsequent rollovers yield less." },
+            "VUSXX": { name: "Vanguard Treasury Money Market Fund (VUSXX)", yield: 3.61, duration: 0.00, class: "Treasury MMF", expense: 0.09, tax: "State/Local Tax-Free", desc: "An institutional-scale money market vehicle optimized to strictly hold short-term US Treasury obligations.", risk: "Extremely low systemic risk. Maintained via stable $1.00 NAV intent. Yield tracks Federal Reserve shifts immediately." },
+            "VMFXX": { name: "Vanguard Federal Money Market Fund (VMFXX)", yield: 3.62, duration: 0.00, class: "Federal MMF", expense: 0.11, tax: "Fractional State Exempt", desc: "Vanguard's master default brokerage sweep vehicle backed heavily by government agency obligations.", risk: "Negligible principal risk backed by US Agency credit lines. Yield tracks monetary policy environments instantaneously." },
+            "SWVXX": { name: "Schwab Prime Money Market Fund (SWVXX)", yield: 3.70, duration: 0.00, class: "Prime MMF", expense: 0.34, tax: "Fully Taxable", desc: "Private sector money market holding short-term commercial paper and financial institution instruments.", risk: "Carries corporate banking counterparty risks. Vulnerable to structural liquidity strains during black-swan banking panics." },
+            "SGOV": { name: "iShares Ultra-Short Treasury ETF (SGOV)", yield: 3.55, duration: 0.10, class: "Ultra-Short ETF", expense: 0.09, tax: "State/Local Tax-Free", desc: "Exchange-traded rolling repository mapping ultra-short 0-3 month physical treasury bills.", risk: "Negligible price duration risk. Minor transactional friction inside intraday secondary execution bid-ask spreads." },
+            "SPAXX": { name: "Fidelity Government Money Market Fund (SPAXX)", yield: 3.31, duration: 0.00, class: "Government MMF", expense: 0.42, tax: "Fractional State Exempt", desc: "Fidelity's primary retail sweep vehicle. Extremely secure sovereign asset framework.", risk: "High internal fee overhead (0.42%) represents a permanent drag that systemically compromises optimization targets." },
+            
+            // Added Comprehensive Cash Assets
+            "HYSA Reserves": { name: "High Yield Savings Account Reserves", yield: 4.10, duration: 0.00, class: "Liquid Banking Sweep", expense: 0.00, tax: "Fully Taxable", desc: "Highly liquid primary tier digital banking cash sweep framework.", risk: "Zero principal risk up to standard limits. Risk isolates purely to instant macro rate adjustments." },
+            "Brokered CDs (Short-Term)": { name: "Short-Term Brokered CDs", yield: 4.25, duration: 0.50, class: "Banking Lock-in", expense: 0.00, tax: "Fully Taxable", desc: "Locked capital bank commitments distributed cleanly through broker trading terminals.", risk: "Zero principal variance if held to maturity. Secondary exit features illiquidity spread penalties." },
+
+            // Original & Added Fixed Income core
+            "Long T-Bills": { name: "Individual Long-Term Treasuries (26-52 Week T-Bills)", yield: 4.05, duration: 0.75, class: "Sovereign Asset", expense: 0.00, tax: "State/Local Tax-Free", desc: "Direct discount obligations of the United States Treasury. Ideal tool to match 6-12 month distribution paths.", risk: "Principal risk is zero if locked until maturity. Early liquidation on open market tracks secondary curve volatility." },
+            "2-Year Note": { name: "2-Year U.S. Treasury Note (Direct)", yield: 4.00, duration: 2.00, class: "Sovereign Asset", expense: 0.00, tax: "State/Local Tax-Free", desc: "Direct programmatic sovereign asset positioning providing fixed bi-annual coupon paths.", risk: "Moderate Duration Risk: Holding a 2-year duration implies that a sudden 1% upward macro shift generates a ~2% paper markdown." },
+            "SCHO": { name: "Schwab 1-3 Year Treasury ETF (SCHO)", yield: 3.98, duration: 1.90, class: "Short Gov ETF", expense: 0.03, tax: "State/Local Tax-Free", desc: "Rock-bottom cost exchange traded vehicle mapping short-duration sovereign indexing lines.", risk: "Perpetual Duration Risk: Because the indexing envelope rolls exposure indefinitely, it never matures to clear paper losses." },
+            "VGSH": { name: "Vanguard 1-3 Year Treasury ETF (VGSH)", yield: 3.98, duration: 1.90, class: "Short Gov ETF", expense: 0.03, tax: "State/Local Tax-Free", desc: "Identical structural market tracing parameters to SCHO.", risk: "Perpetual structural duration exposure. Vulnerable to near-term paper drag if macro yield targets ramp upward." },
+            "SHY": { name: "iShares 1-3 Year Treasury ETF (SHY)", yield: 3.98, duration: 1.90, class: "Short Gov ETF", expense: 0.15, tax: "State/Local Tax-Free", desc: "Blackrock's benchmark short treasury product tracking short duration layers.", risk: "Exposed to identical duration risk as VGSH, but burdened with higher expense parameters (0.15%) that reduce net alpha." },
+            "JPST": { name: "JPMorgan Ultra-Short Income ETF (JPST)", yield: 4.25, duration: 0.50, class: "Corporate ETF", expense: 0.18, tax: "Fully Taxable", desc: "Actively managed high-grade commercial paper and corporate credit allocation pool.", risk: "Corporate Credit Spreads Risk: Shifts in wider industrial default assumptions generate instant capital markdowns." },
+            "Target-Maturity Corp ETFs": { name: "BulletShares/iBonds Target Corporate Matrix", yield: 5.00, duration: 1.80, class: "Corporate ETF", expense: 0.10, tax: "Fully Taxable", desc: "Defined-maturity corporate index ladders holding liquid high-grade operational spreads.", risk: "Credit risk embedded within constituent underlying issuers. Eliminates long-term duration expansion risks via terminal liquidation structure." },
+            "Muni Bond Fund (VWALX)": { name: "Vanguard High-Yield Tax-Exempt Fund", yield: 4.18, duration: 6.50, class: "Muni Fund", expense: 0.13, tax: "Federal Tax-Free", desc: "Municipal debt framework shielding onshore US taxpayers from federal tax liabilities.", risk: "Aggressive Interest Rate Duration (~6.5Y) paired with lower-tier localized municipal credit exposure." },
+            "Fixed Annuity (5-Year)": { name: "Multi-Year Guaranteed Annuity (MYGA Floor)", yield: 5.20, duration: 5.00, class: "Insurance Contract", expense: 0.00, tax: "Tax Deferred", desc: "Insurance backed absolute fixed income contractual floor routing yield stability.", risk: "Illiquidity Risk: Strong early withdrawal penalties. Counterparty risk relies directly on carrier rating capitalization scores." },
+            "Preferred Stock ETF (PFF)": { name: "iShares Preferred & Income Securities ETF", yield: 5.47, duration: 9.90, class: "Preferred ETF", expense: 0.45, tax: "Fully Taxable", desc: "Hybrid equity security tracker pooling high-yielding financial sector preferred paper lines.", risk: "Junior structural ranking. High duration vulnerability (9.9Y) ensures aggressive price drops when macro yields spike." },
+            "Broad Investment Grade (LQD)": { name: "iShares iBoxx $ Investment Grade Corporate Bond ETF", yield: 5.22, duration: 7.20, class: "Corporate ETF", expense: 0.14, tax: "Fully Taxable", desc: "Liquid institutional investment grade corporate debt registry.", risk: "High duration mismatch risk. Extended duration parameters trigger steep valuation hits if long-term rate blocks consolidate upward." },
+            "Broad High-Yield Junk (HYG)": { name: "iShares iBoxx $ High Yield Corporate Bond ETF", yield: 6.85, duration: 3.80, class: "Junk ETF", expense: 0.49, tax: "Fully Taxable", desc: "High-yield sub-investment grade corporate debt exposure mapping junk layers.", risk: "Extreme correlation to equities during macro panics. High default spread vulnerability if industrial growth parameters break." },
+
+            // Equity Layers, Overlays, RE & Alternatives
+            "SCHD/VYM Dividends": { name: "Passive Blue-Chip Dividend Engine Pool", yield: 3.30, duration: 0.00, class: "Equities Passive", expense: 0.06, tax: "Qualified Dividend", desc: "Core passive mega-cap dividend equity tracking wrapper.", risk: "Standard equity market beta risk. Price discovery drops alongside macro equity indices." },
+            "Equities Active Covered Calls": { name: "Underlying High-Liquidity Equity Capital Core", yield: 0.00, duration: 0.00, class: "Active Equity Overlay", expense: 0.00, tax: "Fully Taxable", desc: "Core institutional inventory blocks supporting options structural writing loops.", risk: "Unhedged downside equity market risk. Exposed to immediate systemic equity pullbacks." },
+            "RSU Target Covered Calls": { name: "Strategic Core Inventory Accumulation Stack", yield: 0.00, duration: 0.00, class: "Active Equity Overlay", expense: 0.00, tax: "Fully Taxable", desc: "Targeted technological inventory space supporting systematic option execution lines.", risk: "High concentration hazard profile. Directly exposed to isolated enterprise performance adjustments." },
+            "Covered Calls Overlay Premium": { name: "Systematic Options Premium Income Layer", yield: 17.00, duration: 0.00, class: "Active Option Overlay", expense: 0.00, tax: "Fully Taxable", desc: "Options-driven income layer mapping continuous call-writing premium streams over active equity tranches.", risk: "Upside Cap Risk: Sacrifices capital upside on underlying equity tranches during aggressive bull market cycles." },
+            "DST/Syndicated MF RE": { name: "Delaware Statutory Trust / Multifamily Syndication Block", yield: 6.50, duration: 0.00, class: "Real Estate Block", expense: 0.00, tax: "Tax Deferred (1031)", desc: "Direct, un-leveraged operational real estate allocation providing continuous distribution cashflow streams.", risk: "Complete operational illiquidity. Capital locked through extended multi-year multi-family project lifecycle horizons." },
+            "Private Credit (Yieldstreet)": { name: "Senior Secured Private Debt Placement", yield: 10.00, duration: 2.50, class: "Alternative Assets", expense: 1.00, tax: "Fully Taxable", desc: "Direct asset-backed private debt allocations matching alternative cash generation criteria.", risk: "Underlying structural corporate platform risk paired with absolute secondary market illiquidity defaults." },
+            "BDCs (ARCC/MAIN Mix)": { name: "Business Development Company Structural Portfolio Blend", yield: 10.50, duration: 0.00, class: "Alternative Assets", expense: 0.00, tax: "Fully Taxable", desc: "Middle-market direct asset corporate lender pools returning robust dividend flows.", risk: "Highly credit-sensitive configuration tracking corporate bankruptcy parameters during macro recessions." },
+            "Tokenized T-Bills (Ondo)": { name: "Ondo Short-Term Sovereign Token Allocation", yield: 4.50, duration: 0.10, class: "Alternative Assets", expense: 0.15, tax: "Fully Taxable", desc: "Digital smart contract wrapped short sovereign bill exposure layers.", risk: "Smart contract technical exploit risk paired with localized blockchain infrastructure validation failure hazards." },
+            "Physical Gold (IAU)": { name: "iShares Gold Trust Registry", yield: 0.00, duration: 0.00, class: "Alternative Assets", expense: 0.25, tax: "Collectibles Tax Rate", desc: "Direct liquid precious metals macro protection hedge framework.", risk: "Zero nominal yield generation. Valuations fluctuate purely based on global fiat purchasing power sentiment." },
+            "Bitcoin Core": { name: "Decentralized Sovereign Crypto Asset Foundation", yield: 0.00, duration: 0.00, class: "Alternative Assets", expense: 0.00, tax: "Fully Taxable", desc: "Highly asymmetric non-correlated crypto liquidity base layer.", risk: "Extreme downside volatility. Zero cash yield generation. Relies entirely on convex structural price discovery rules." },
+            "Niti Equity Floor": { name: "Strategic Family Capital Ecosystem Private Capitalization Anchor", yield: 0.00, duration: 0.00, class: "Alternative Assets", expense: 0.00, tax: "Fully Taxable", desc: "Strategic private equity asset layer holding non-yielding long-term corporate footprints.", risk: "Complete asset lock-up. Valuation adjustments track private ecosystem structural changes." },
+            
+            // Original Extended Macro Assets (Preserved for logic matching)
+            "VTG": { name: "Vanguard Total Treasury ETF (VTG)", yield: 4.35, duration: 5.70, class: "Broad Treas ETF", expense: 0.03, tax: "State/Local Tax-Free", desc: "Blended index tracking long, intermediate, and short sovereign durations.", risk: "High blended duration profile (5.7Y) leaves principal vulnerable to paper markdowns if long rates scale up." },
+            "TIP": { name: "iShares TIPS Bond ETF (TIP)", yield: 2.10, duration: 6.40, class: "Inflation ETF", expense: 0.19, tax: "State-Free", desc: "Treasury Inflation-Protected Securities tracking vehicle engineered to index returns dynamically.", risk: "Disinflation Risk: If macro inflation metrics cool quickly, underlying principal adjustment drops." },
+            "WIP": { name: "SPDR International Inflation ETF (WIP)", yield: 2.40, duration: 7.00, class: "Intl Inflation", expense: 0.50, tax: "Fully Taxable", desc: "Tracks inflation-linked global sovereign assets domiciled outside the United States border structures.", risk: "Foreign Exchange Risk: Total vulnerability to unhedged cross-border currency translations relative to USD." }
+        };
+
+        let activeProfile = "balanced";
+        let engineCalculatedWeights = {};
+        let auditLogTrace = {};
+
+        function loadEngineState() {
+            if(localStorage.getItem('fx_engine_cached') === 'true') {
+                document.getElementById('capital').value = localStorage.getItem('fx_capital');
+                document.getElementById('taxJurisdiction').value = localStorage.getItem('fx_jurisdiction');
+                document.getElementById('horizon').value = localStorage.getItem('fx_horizon');
+                document.getElementById('liquidityTarget').value = localStorage.getItem('fx_liq_target');
+                activeProfile = localStorage.getItem('fx_active_profile') || 'balanced';
+            }
+            updateProfileUI();
+        }
+
+        function saveEngineState() {
+            localStorage.setItem('fx_engine_cached', 'true');
+            localStorage.setItem('fx_capital', document.getElementById('capital').value);
+            localStorage.setItem('fx_jurisdiction', document.getElementById('taxJurisdiction').value);
+            localStorage.setItem('fx_horizon', document.getElementById('horizon').value);
+            localStorage.setItem('fx_liq_target', document.getElementById('liquidityTarget').value);
+            localStorage.setItem('fx_active_profile', activeProfile);
+        }
+
+        function resetEngineDefaults() {
+            localStorage.clear();
+            document.getElementById('capital').value = "8400000";
+            document.getElementById('taxJurisdiction').value = "us_expat";
+            document.getElementById('horizon').value = "12";
+            document.getElementById('liquidityTarget').value = "15";
+            activeProfile = "balanced";
+            updateProfileUI();
+            calculate();
+        }
+
+        function updateProfileState(profile) {
+            activeProfile = profile;
+            updateProfileUI();
+            calculate();
+        }
+
+        function updateProfileUI() {
+            document.getElementById('btn-safety').className = activeProfile === 'safety' ? "text-left p-3 rounded-xl border border-blue-500 bg-blue-950/40 transition-all w-full" : "text-left p-3 rounded-xl border border-slate-800 bg-slate-900/20 hover:border-slate-700/50 transition-all w-full";
+            document.getElementById('btn-balanced').className = activeProfile === 'balanced' ? "text-left p-3 rounded-xl border border-emerald-500 bg-emerald-950/40 transition-all w-full" : "text-left p-3 rounded-xl border border-slate-800 bg-slate-900/20 hover:border-slate-700/50 transition-all w-full";
+        }
+
+        function inspectAssetForensics(key) {
+            const asset = coreDatabase[key];
+            const weight = engineCalculatedWeights[key] || 0;
+            const traceText = auditLogTrace[key];
+            const badge = document.getElementById('modalBadge');
+
+            document.getElementById('modalAssetName').innerText = key;
+            document.getElementById('modalAssetClass').innerText = `${asset.class.toUpperCase()} STRUCTURE WRAPPER`;
+            document.getElementById('modalYield').innerText = asset.yield.toFixed(2) + "%";
+            document.getElementById('modalExpense').innerText = asset.expense === 0 ? "0.00%" : asset.expense.toFixed(2) + "%";
+            document.getElementById('modalDuration').innerText = asset.duration === 0 ? "None ($1 NAV / Variable)" : asset.duration.toFixed(1) + "Y";
+            document.getElementById('modalTax').innerText = asset.tax;
+            document.getElementById('modalDescription').innerText = asset.desc;
+            document.getElementById('modalRisk').innerText = asset.risk;
+            document.getElementById('modalTraceLog').innerText = traceText;
+
+            if(weight > 0) {
+                badge.innerText = `ACCEPTED (${weight}%)`;
+                badge.className = "text-[10px] font-mono font-bold tracking-widest px-2.5 py-1 rounded bg-emerald-950 text-emerald-400 border border-emerald-800";
+                document.getElementById('modalTraceLog').className = "p-3 bg-slate-950 border border-emerald-900/50 rounded-lg font-mono text-xs text-emerald-400 leading-relaxed";
+            } else {
+                badge.innerText = "BYPASSED / EXCLUDED";
+                badge.className = "text-[10px] font-mono font-bold tracking-widest px-2.5 py-1 rounded bg-slate-950 text-slate-500 border border-slate-800";
+                document.getElementById('modalTraceLog').className = "p-3 bg-slate-950 border border-slate-850 rounded-lg font-mono text-xs text-slate-400 leading-relaxed";
+            }
+
+            document.getElementById('forensicModal').classList.remove('hidden');
+        }
+
+        function closeForensicModal() {
+            document.getElementById('forensicModal').classList.add('hidden');
+        }
+
+        function calculate() {
+            saveEngineState();
+            
+            const capital = parseFloat(document.getElementById('capital').value) || 0;
+            const horizon = parseInt(document.getElementById('horizon').value);
+            const liqPct = parseInt(document.getElementById('liquidityTarget').value);
+            const jurisdiction = document.getElementById('taxJurisdiction').value;
+
+            document.getElementById('horizonLabel').innerText = horizon + " Mo";
+            document.getElementById('liquidityLabel').innerText = liqPct + "%";
+
+            // Initialize database states
+            Object.keys(coreDatabase).forEach(k => { engineCalculatedWeights[k] = 0; auditLogTrace[k] = ""; });
+            
+            const isExpat = (jurisdiction === "us_expat");
+            const coreRemainder = 100 - liqPct;
+
+            // --- SEGMENT 1: IMMEDIATE LIQUIDITY CASH STACKS ---
+            if (liqPct > 0) {
+                if (isExpat) {
+                    engineCalculatedWeights["Short T-Bills"] = Math.round(liqPct * 0.4);
+                    engineCalculatedWeights["HYSA Reserves"] = Math.round(liqPct * 0.3);
+                    engineCalculatedWeights["VMFXX"] = liqPct - engineCalculatedWeights["Short T-Bills"] - engineCalculatedWeights["HYSA Reserves"];
+                    
+                    auditLogTrace["Short T-Bills"] = `PASSED FILTER: Locked top-tier state-blind short sovereign yields at 4.15%.`;
+                    auditLogTrace["HYSA Reserves"] = `PASSED FILTER: High yield cash storage allocated cleanly at 4.10% without term constraints.`;
+                    auditLogTrace["VMFXX"] = `PASSED FILTER: Master brokerage settlement default vehicle utilized for remaining baseline allocation at 3.62%.`;
+                    auditLogTrace["VUSXX"] = `BYPASSED BY EXPAT RULE: Expat tracking eliminates state immunity optimization gains. Bypassed for higher gross vehicles.`;
+                    auditLogTrace["SWVXX"] = `BYPASSED: Displaced by credit priority guidelines. Prefer pure sovereign cash wrappers.`;
+                    auditLogTrace["SGOV"] = `BYPASSED: Displaced by direct physical bills to fully neutralize internal fund expense ratios (0.09%).`;
+                    auditLogTrace["SPAXX"] = `EXCLUDED BY FEE OVERHEAD: Internal operational wrap costs (0.42% expense ratio) fail efficiency parameters.`;
+                    auditLogTrace["Brokered CDs (Short-Term)"] = `BYPASSED: Replaced by liquid HYSA cash layers to ensure instant execution features.`;
+                } else {
+                    if (jurisdiction === "us_ca") {
+                        engineCalculatedWeights["VUSXX"] = Math.round(liqPct * 0.6);
+                        engineCalculatedWeights["SGOV"] = liqPct - engineCalculatedWeights["VUSXX"];
+                        auditLogTrace["VUSXX"] = `PASSED ON-SHORE SELECTION: Shielding California state tax exposures via pure short treasury pooling.`;
+                        auditLogTrace["SGOV"] = `PASSED ON-SHORE SELECTION: Liquid ETF wrapper deployed to expand liquidation access with state tax immunity.`;
+                        auditLogTrace["VMFXX"] = `BYPASSED BY TAX FILTER: Failed California tax optimization matrix due to subject agency exposure penalties.`;
+                        auditLogTrace["HYSA Reserves"] = `BYPASSED BY TAX FILTER: Cash savings allocations penalized under high state tax jurisdiction limits.`;
+                    } else {
+                        engineCalculatedWeights["VUSXX"] = Math.round(liqPct * 0.5);
+                        engineCalculatedWeights["Brokered CDs (Short-Term)"] = liqPct - engineCalculatedWeights["VUSXX"];
+                        auditLogTrace["VUSXX"] = `PASSED SELECTION FILTER: Standard state cash benchmark baseline integration.`;
+                        auditLogTrace["Brokered CDs (Short-Term)"] = `PASSED SELECTION: Low state friction allows locking CD yield spreads at 4.25%.`;
+                    }
+                }
+            } else {
+                masterBucketSchema.immediate_cash.items.forEach(k => auditLogTrace[k] = "EXCLUDED: Immediate Cash Target knob explicitly set to 0%.");
+            }
+
+            // --- SEGMENT 2: CORE FIXED INCOME & TARGET MANDATES ---
+            if (coreRemainder > 0) {
+                if (activeProfile === "safety") {
+                    // Strict Capital Preservation Rules
+                    if (horizon <= 12) {
+                        engineCalculatedWeights["Long T-Bills"] = Math.round(coreRemainder * 0.4);
+                        engineCalculatedWeights["2-Year Note"] = Math.round(coreRemainder * 0.3);
+                        engineCalculatedWeights["Target-Maturity Corp ETFs"] = coreRemainder - engineCalculatedWeights["Long T-Bills"] - engineCalculatedWeights["2-Year Note"];
+
+                        auditLogTrace["Long T-Bills"] = `PASSED MANDATE: Direct matching maturity window. Reaches full par execution within user timeline parameters.`;
+                        auditLogTrace["2-Year Note"] = `PASSED MANDATE: High sovereign safety layer locking intermediate income benchmarks.`;
+                        auditLogTrace["Target-Maturity Corp ETFs"] = `PASSED MANDATE: Short corporate maturities capture yield spreads without duration extension traps.`;
+                    } else {
+                        engineCalculatedWeights["2-Year Note"] = Math.round(coreRemainder * 0.6);
+                        engineCalculatedWeights["Fixed Annuity (5-Year)"] = coreRemainder - engineCalculatedWeights["2-Year Note"];
+                        
+                        auditLogTrace["2-Year Note"] = `PASSED MANDATE: Core multi-year defensive structural baseline anchor matching timeline paths.`;
+                        auditLogTrace["Fixed Annuity (5-Year)"] = `PASSED MANDATE: Insurance capital backing deployed to institutionalize an absolute 5.20% return floor.`;
+                        auditLogTrace["Long T-Bills"] = `BYPASSED: Horizon parameters prioritize intermediate curves over near-term paper.`;
+                    }
+                    
+                    // Exclusions for Safety Profile
+                    auditLogTrace["SCHO"] = `BYPASSED: Rolling index architectures do not mature; subject to principal variance if yields pivot.`;
+                    auditLogTrace["VGSH"] = `BYPASSED: Displaced by direct sovereign asset paths to save management fees.`;
+                    auditLogTrace["SHY"] = `EXCLUDED BY FEE SCREEN: Drag metrics (0.15% expense ratio) heavily penalized over direct obligations.`;
+                    auditLogTrace["JPST"] = `BYPASSED: Corporate duration spread volatility restricted under safety mandates.`;
+                    auditLogTrace["Muni Bond Fund (VWALX)"] = `BYPASSED BY DURATION SHIELD: Strict safety parameters drop long-duration vehicles (~6.5Y).`;
+                    auditLogTrace["Preferred Stock ETF (PFF)"] = `BYPASSED BY CREDIT ENGINE: Subordinated financial papers fully rejected from capital protection blocks.`;
+                    auditLogTrace["Broad Investment Grade (LQD)"] = `DROPPED BY OPTIMIZATION: Prohibitive 7.2Y duration profile creates extreme asset risk.`;
+                    auditLogTrace["Broad High-Yield Junk (HYG)"] = `DROPPED BY OPTIMIZATION: Sub-investment grade credit risk profiles completely banned.`;
+
+                    // Exclude all equity/alt assets under Safety Profile
+                    masterBucketSchema.extended_macro.items.forEach(k => {
+                        auditLogTrace[k] = `EXCLUDED BY RISK MANDATE: Asset class tracking criteria rejected under Capital Preservation protocols.`;
+                    });
+
+                } else {
+                    // --- MODERATE / YIELD-OPTIMIZED BLEND (BALANCED) ---
+                    // Allocate modern diversified matrix across the expanded universe
+                    const allocMap = {
+                        "SCHD/VYM Dividends": Math.round(coreRemainder * 0.20),
+                        "Equities Active Covered Calls": Math.round(coreRemainder * 0.15),
+                        "RSU Target Covered Calls": Math.round(coreRemainder * 0.08),
+                        "Covered Calls Overlay Premium": 0, // Computed dynamically below
+                        "DST/Syndicated MF RE": Math.round(coreRemainder * 0.20),
+                        "Private Credit (Yieldstreet)": Math.round(coreRemainder * 0.05),
+                        "BDCs (ARCC/MAIN Mix)": Math.round(coreRemainder * 0.05),
+                        "Muni Bond Fund (VWALX)": Math.round(coreRemainder * 0.05),
+                        "JPST": Math.round(coreRemainder * 0.05),
+                        "Preferred Stock ETF (PFF)": Math.round(coreRemainder * 0.05),
+                        "2-Year Note": 0, // Remainder anchor
+                    };
+
+                    let accumulatedAlloc = 0;
+                    Object.keys(allocMap).forEach(k => {
+                        engineCalculatedWeights[k] = allocMap[k];
+                        accumulatedAlloc += allocMap[k];
+                    });
+
+                    // Assign remainder of core parameters to intermediate sovereign safety lines
+                    engineCalculatedWeights["2-Year Note"] = coreRemainder - accumulatedAlloc;
+
+                    // Compute dynamic option premium logic layer based on overlay bases
+                    const activeBase = engineCalculatedWeights["Equities Active Covered Calls"];
+                    const rsuBase = engineCalculatedWeights["RSU Target Covered Calls"];
+                    engineCalculatedWeights["Covered Calls Overlay Premium"] = activeBase + rsuBase;
+
+                    // Trace text definitions for balanced profile allocations
+                    auditLogTrace["SCHD/VYM Dividends"] = `PASSED SELECTION: Core passive blue-chip equity allocation layer capturing standard 3.30% dividends.`;
+                    auditLogTrace["Equities Active Covered Calls"] = `PASSED SELECTION: Base equity blocks activated to anchor systematic options income overlay.`;
+                    auditLogTrace["RSU Target Covered Calls"] = `PASSED SELECTION: Focused corporate tech inventory allocated to support premium writing loops.`;
+                    auditLogTrace["Covered Calls Overlay Premium"] = `PASSED OVERLAY: Derived option```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fixed Income Forensic Matrix Engine</title>
+    <script src="[https://cdn.tailwindcss.com](https://cdn.tailwindcss.com)"></script>
+    <style>
+        input[type="range"] { accent-color: #2563eb; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #020617; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans antialiased min-h-screen pb-16">
+
+    <div class="max-w-7xl mx-auto px-4 py-8">
+        <!-- Engine Header -->
+        <header class="mb-6 border-b border-slate-800 pb-6 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+            <div>
+                <h1 class="text-3xl font-black tracking-tight bg-gradient-to-r from-blue-400 via-indigo-400 to-emerald-400 bg-clip-text text-transparent">Fixed Income Risk Optimization Engine</h1>
+                <p class="text-sm text-slate-400 mt-1">Forensic Attribution Matrix &bull; Zero-Server Local State Persistence</p>
+            </div>
+            <div class="bg-slate-900 border border-slate-800 px-4 py-2 rounded-xl font-mono text-xs text-slate-400 shadow-inner flex gap-4">
+                <div>Fed Funds: <span class="text-emerald-400 font-bold">3.75%</span></div>
+                <div>Storage Layer: <span class="text-blue-400 font-bold">Browser LocalCache</span></div>
+            </div>
+        </header>
+
+        <!-- LIVE YIELD CURVE PLOT -->
+        <div class="mb-8 bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-sm font-bold uppercase tracking-wider text-slate-300">Treasury Term Structure (Yield Curve)</h3>
+                <div id="curveStatusLabel" class="text-xs font-mono font-bold px-2.5 py-0.5 rounded-full bg-slate-950 text-slate-400 border border-slate-800">Normal</div>
+            </div>
+            <div class="relative w-full h-28 bg-slate-950/60 rounded-xl p-4 flex items-center justify-center">
+                <svg id="yieldCurveSvg" class="w-full h-full overflow-visible" viewBox="0 0 1000 80" preserveAspectRatio="none"></svg>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            <!-- Left Panel: Engine Control Knobs -->
+            <div class="lg:col-span-4 bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-2xl space-y-6 h-fit">
+                <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                    <h2 class="text-xl font-bold text-white tracking-wide">Core Controls</h2>
+                    <button onclick="resetEngineDefaults()" class="text-[10px] font-mono text-slate-500 hover:text-amber-400 border border-slate-800 hover:border-amber-900 px-2 py-0.5 rounded transition-all">Clear Cache</button>
+                </div>
+                
+                <!-- Capital Input -->
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Total Capital Allocation ($)</label>
+                    <input type="number" id="capital" value="250000" step="10000" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white font-mono text-lg font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                </div>
+
+                <!-- Tax Residency Status Selector -->
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Tax Jurisdiction Filter</label>
+                    <select id="taxJurisdiction" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-slate-200 font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        <option value="us_expat">US Citizen Living Abroad (Expat - State Blind)</option>
+                        <option value="us_ca">US Onshore Resident - High State Tax (CA / NY)</option>
+                        <option value="us_tx">US Onshore Resident - No State Tax (TX / FL)</option>
+                    </select>
+                </div>
+
+                <!-- Deployment Window Slider -->
+                <div>
+                    <div class="flex justify-between items-center mb-2">
+                        <label class="text-xs font-bold uppercase tracking-wider text-slate-400">Deployment Horizon</label>
+                        <span id="horizonLabel" class="bg-blue-950 text-blue-300 font-mono font-bold text-xs px-2.5 py-0.5 rounded-full border border-blue-800">3 Months</span>
+                    </div>
+                    <input type="range" id="horizon" min="1" max="36" value="3" class="w-full h-1.5 bg-slate-800 rounded-lg cursor-pointer">
+                    <div class="flex justify-between font-mono text-[10px] text-slate-500 mt-1">
+                        <span>1M</span>
+                        <span>12M</span>
+                        <span>24M</span>
+                        <span>36M</span>
+                    </div>
+                </div>
+
+                <!-- Target Immediate Liquidity Slider -->
+                <div>
+                    <div class="flex justify-between items-center mb-2">
+                        <label class="text-xs font-bold uppercase tracking-wider text-slate-400">Immediate Cash Target</label>
+                        <span id="liquidityLabel" class="bg-emerald-950 text-emerald-300 font-mono font-bold text-xs px-2.5 py-0.5 rounded-full border border-emerald-800">20%</span>
+                    </div>
+                    <input type="range" id="liquidityTarget" min="0" max="100" value="20" step="5" class="w-full h-1.5 bg-slate-800 rounded-lg cursor-pointer">
+                </div>
+
+                <!-- Mandate Toggle -->
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Portfolio Mandate Profile</label>
+                    <div class="grid grid-cols-1 gap-2">
+                        <button onclick="updateProfileState('safety')" id="btn-safety" class="text-left p-3 rounded-xl border border-blue-500 bg-blue-950/40 transition-all w-full">
+                            <div class="font-bold text-sm text-blue-400">Strict Capital Preservation</div>
+                        </button>
+                        <button onclick="updateProfileState('balanced')" id="btn-balanced" class="text-left p-3 rounded-xl border border-slate-800 bg-slate-900/20 transition-all w-full">
+                            <div class="font-bold text-sm text-slate-300">Moderate / Yield-Optimized Blend</div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel: Matrix Dashboard -->
+            <div class="lg:col-span-8 space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="bg-gradient-to-br from-slate-900 to-slate-950 border border-slate-800 p-5 rounded-2xl shadow-xl">
+                        <div class="text-xs uppercase font-bold tracking-wider text-slate-500">Blended Net Portfolio Yield</div>
+                        <div id="blendedYield" class="text-4xl font-black font-mono text-emerald-400 mt-2 tracking-tight">0.00%</div>
+                    </div>
+                    <div class="bg-gradient-to-br from-slate-900 to-slate-950 border border-slate-800 p-5 rounded-2xl shadow-xl">
+                        <div class="text-xs uppercase font-bold tracking-wider text-slate-500">Projected Annual Cash Income</div>
+                        <div id="annualIncome" class="text-3xl font-black font-mono text-blue-400 mt-2 tracking-tight">$0.00</div>
+                    </div>
+                </div>
+
+                <!-- Master Bucket Allocator View -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl">
+                    <div class="px-6 py-4 border-b border-slate-800 bg-slate-900/50 flex justify-between items-center">
+                        <h3 class="font-bold text-slate-200 text-sm">Allocation & Exclusion Logic Trace</h3>
+                        <span class="text-[10px] font-mono text-slate-500">Click any row to execute deep inspection</span>
+                    </div>
+                    <div class="overflow-x-auto max-h-[600px] overflow-y-auto custom-scrollbar">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-950 border-b border-slate-800 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                    <th class="px-6 py-3.5 w-1/4">Instrument</th>
+                                    <th class="px-6 py-3.5 text-center w-24">Allocation</th>
+                                    <th class="px-6 py-3.5 text-right w-16">Yield</th>
+                                    <th class="px-6 py-3.5 px-4 w-1/2">Engine Exclusion/Selection Attributions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="allocationRows" class="divide-y divide-slate-800 text-sm font-medium text-slate-300">
+                                <!-- Dynamic JS Generation -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- UNIVERSAL FORENSIC MODAL -->
+    <div id="forensicModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden animate-fade-in">
+        <div class="bg-slate-900 border border-slate-800 max-w-2xl w-full rounded-2xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+            <div class="p-6 border-b border-slate-800 bg-slate-950/40 flex justify-between items-start">
+                <div>
+                    <span id="modalBadge" class="text-[9px] font-mono font-bold tracking-widest px-2 py-0.5 rounded uppercase">STATUS</span>
+                    <h3 id="modalAssetName" class="text-2xl font-black text-white mt-2">Product Name</h3>
+                    <p id="modalAssetClass" class="text-xs text-slate-400 font-mono mt-0.5">Asset Class Wrapper</p>
+                </div>
+                <button onclick="closeForensicModal()" class="text-slate-400 hover:text-white text-lg bg-slate-800 hover:bg-slate-700 w-8 h-8 rounded-xl border border-slate-700 flex items-center justify-center transition-all">&times;</button>
+            </div>
+            
+            <div class="p-6 overflow-y-auto space-y-4 custom-scrollbar text-sm">
+                <!-- Data Snapshot Grid -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="bg-slate-950 p-3 rounded-xl border border-slate-850 text-center">
+                        <div class="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Raw Yield</div>
+                        <div id="modalYield" class="text-xl font-black font-mono text-emerald-400 mt-1">0.00%</div>
+                    </div>
+                    <div class="bg-slate-950 p-3 rounded-xl border border-slate-850 text-center">
+                        <div class="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Expense Ratio</div>
+                        <div id="modalExpense" class="text-xl font-black font-mono text-amber-500 mt-1">0.00%</div>
+                    </div>
+                    <div class="bg-slate-950 p-3 rounded-xl border border-slate-850 text-center">
+                        <div class="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Duration Weight</div>
+                        <div id="modalDuration" class="text-xl font-black font-mono text-blue-400 mt-1">0.00Y</div>
+                    </div>
+                    <div class="bg-slate-950 p-3 rounded-xl border border-slate-850 text-center">
+                        <div class="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Tax Profile</div>
+                        <div id="modalTax" class="text-xs font-bold text-indigo-300 mt-2 truncate">Exempt</div>
+                    </div>
+                </div>
+
+                <!-- Core Operational Mechanics Description -->
+                <div class="bg-slate-950 p-4 rounded-xl border border-slate-850">
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5 font-mono">Structural Operations Description</h4>
+                    <p id="modalDescription" class="text-slate-300 text-xs leading-relaxed">Structural definition profile asset.</p>
+                </div>
+
+                <!-- NEW: Forensics Risk Matrix Section -->
+                <div class="bg-slate-950 p-4 rounded-xl border border-red-950/40 bg-gradient-to-r from-slate-950 to-red-950/10">
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-rose-400 mb-1.5 font-mono flex items-center gap-1.5">
+                        <span class="inline-block w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                        Structural Risk & Volatility Profile
+                    </h4>
+                    <p id="modalRisk" class="text-slate-300 text-xs leading-relaxed">Risk parameters mapping.</p>
+                </div>
+
+                <!-- Forensic Rules Verdict Log -->
+                <div class="bg-slate-950 p-4 rounded-xl border border-slate-850">
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2 font-mono">Engine Attribution Decision Log</h4>
+                    <div id="modalTraceLog" class="p-3 bg-slate-900 border rounded-lg font-mono text-xs leading-relaxed">Attribution string tracing framework.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Updated master structure containing the extensive research additions mapped to the 3-bucket model
+        const masterBucketSchema = {
+            immediate_cash: { title: "1. Immediate Liquidity Bucket", items: ["Short T-Bills", "VMFXX", "VUSXX", "SGOV", "SWVXX", "SPAXX", "BIL", "USFR", "TFLO"] },
+            short_horizon: { title: "2. Short Horizon Deployment Bucket", items: ["Long T-Bills", "2-Year Note", "SCHO", "VGSH", "SHY", "JPST", "ICSH", "MINT", "FLOT"] },
+            extended_macro: { title: "3. Extended Duration / Volatile Macro Allocation Bucket", items: ["VTG", "VWALX", "TIP", "WIP", "PFF", "LQD", "HYG"] }
+        };
+
+        // Complete expanded database with validated June 2026 asset yield parameters
+        const coreDatabase = {
+            "Short T-Bills": { name: "Individual Short-Term Treasuries (4-13 Week T-Bills)", yield: 4.15, duration: 0.15, class: "Sovereign Asset", expense: 0.00, tax: "State/Local Tax-Free", desc: "Direct sovereign obligation of the US Government holding no tracking error or expense overhead.", risk: "Zero structural credit risk or principal risk if held to maturity. Primary risk is Reinvestment Risk: if macro rates decrease sharply, subsequent rollovers will capture lower yields, reducing forward cash income distributions." },
+            "Long T-Bills": { name: "Individual Long-Term Treasuries (26-52 Week T-Bills)", yield: 4.05, duration: 0.75, class: "Sovereign Asset", expense: 0.00, tax: "State/Local Tax-Free", desc: "Direct discount obligations of the United States Treasury. Ideal tool to execute matching maturities within a tight 6-12 month distribution window.", risk: "Principal risk is zero if locked until maturity. If forced to liquidate early on secondary markets, minor interim price volatility exists due to shifts in macro yield paths." },
+            "2-Year Note": { name: "2-Year U.S. Treasury Note (Direct)", yield: 3.95, duration: 2.00, class: "Sovereign Asset", expense: 0.00, tax: "State/Local Tax-Free", desc: "Direct programmatic sovereign asset positioning providing fixed bi-annual coupon streams.", risk: "Moderate Interest Rate Duration Risk: Holding a 2-year duration implies that a sudden 1% upward shift in market yield targets creates a ~2% paper loss of principal if sold early on the open market." },
+            "VUSXX": { name: "Vanguard Treasury Money Market Fund (VUSXX)", yield: 3.61, duration: 0.00, class: "Treasury MMF", expense: 0.09, tax: "State/Local Tax-Free", desc: "An institutional-scale money market vehicle optimized to strictly hold short-term US Treasury obligations.", risk: "Extremely low systemic risk. Principal risk is shielded via stable $1.00 NAV intent. Yield risk is absolute and immediate: fund yield mirrors Federal Reserve interest rate policy minute-by-minute." },
+            "VMFXX": { name: "Vanguard Federal Money Market Fund (VMFXX)", yield: 3.60, duration: 0.00, class: "Federal MMF", expense: 0.11, tax: "Fractional State Exempt", desc: "Vanguard's master default brokerage sweep vehicle. Extensively backed by government agency debt and repurchase execution parameters.", risk: "Negligible principal risk backed by US Agency credit lines. Yield tracks macroeconomic environments instantly, collapsing rapidly if the Fed eases policy parameters." },
+            "SWVXX": { name: "Schwab Prime Money Market Fund (SWVXX)", yield: 3.70, duration: 0.00, class: "Prime MMF", expense: 0.34, tax: "Fully Taxable", desc: "A private sector money market pooling framework holding short-term commercial paper and institutional bank obligations.", risk: "Underlying Credit Risk: Holds private institutional bank paper. While structured to maintain a stable $1.00 NAV, it carries marginally higher credit friction than pure sovereign alternatives during extreme banking liquidity contractions." },
+            "SGOV": { name: "iShares Ultra-Short Treasury ETF (SGOV)", yield: 3.55, duration: 0.10, class: "Ultra-Short ETF", expense: 0.09, tax: "State/Local Tax-Free", desc: "Exchange-traded rolling repository holding highly short-dated 0-3 month physical treasury bills.", risk: "Minimal price duration risk. Yield moves alongside short-term rates. Minor transactional risk inside micro intraday spread execution and bid-ask mismatch on secondary trading books." },
+            "SPAXX": { name: "Fidelity Government Money Market Fund (SPAXX)", yield: 3.31, duration: 0.00, class: "Government MMF", expense: 0.42, tax: "Fractional State Exempt", desc: "Fidelity's primary retail sweep vehicle. Highly secure sovereign asset framework.", risk: "Negative Alpha/Drag Risk: High internal management fees (0.42%) present a permanent drag that systematically erodes capital return targets relative to pure underlying macro benchmarks." },
+            
+            // Extensive Cash / Money Market Expansion Layers
+            "BIL": { name: "SPDR Bloomberg 1-3 Month T-Bill ETF (BIL)", yield: 3.65, duration: 0.08, class: "Ultra-Short ETF", expense: 0.13, tax: "State/Local Tax-Free", desc: "Tracks the Bloomberg 1-3 Month U.S. Treasury Bill Index, providing highly liquid sovereign access.", risk: "Negligible credit risk. Yield adjusts instantly to policy rate pivots, leaving it fully exposed to immediate reinvestment risk profiles." },
+            "USFR": { name: "WisdomTree Floating Rate Treasury Fund (USFR)", yield: 3.90, duration: 0.02, class: "Floating Rate Treasury", expense: 0.15, tax: "State/Local Tax-Free", desc: "Invests in floating rate US Treasury notes whose coupons reset weekly based on the most recent 3-month T-bill auction.", risk: "Near-zero duration risk due to weekly resets. Yield drops precipitously as soon as the Federal Reserve cuts the front end of the curve." },
+            "TFLO": { name: "iShares Treasury Floating Rate Bond ETF (TFLO)", yield: 3.88, duration: 0.02, class: "Floating Rate Treasury", expense: 0.15, tax: "State/Local Tax-Free", desc: "Tracks the ICE U.S. Treasury Floating Rate Index, offering a pure play on weekly rate adjustments.", risk: "Sovereign credit risk profile with minimal capital volatility. Yield compression matches monetary easing trends instantly." },
+
+            "SCHO": { name: "Schwab 1-3 Year Treasury ETF (SCHO)", yield: 3.98, duration: 1.90, class: "Short Gov ETF", expense: 0.03, tax: "State/Local Tax-Free", desc: "A highly defensive, rock-bottom cost exchange traded vehicle mapping short-duration sovereign indexing lines.", risk: "Perpetual Duration Risk: Because the fund loops exposure to maintain a fixed 1-3 year maturity band indefinitely, the fund never actually matures. Principal is vulnerable to permanent market drawdowns if macro interest rates experience an extended structural upward shift." },
+            "VGSH": { name: "Vanguard 1-3 Year Treasury ETF (VGSH)", yield: 3.98, duration: 1.90, class: "Short Gov ETF", expense: 0.03, tax: "State/Local Tax-Free", desc: "Identical market tracing performance parameters to SCHO.", risk: "Perpetual structural duration exposure. Intercepts intermediate capital shifts whenever macro rates curve upward, creating floating unrealized losses." },
+            "SHY": { name: "iShares 1-3 Year Treasury ETF (SHY)", yield: 3.98, duration: 1.90, class: "Short Gov ETF", expense: 0.15, tax: "State/Local Tax-Free", desc: "Blackrock's benchmark short treasury product tracking short duration lines.", risk: "Vulnerable to fixed duration price fluctuations. Compounded by higher expense parameters (0.15%), which artificially worsens the risk-adjusted net return envelope." },
+            
+            // Short Horizon Active/IG Fixed Income Matrix Tickers
+            "JPST": { name: "JPMorgan Ultra-Short Income ETF (JPST)", yield: 4.25, duration: 0.50, class: "Corporate ETF", expense: 0.18, tax: "Fully Taxable", desc: "An actively traded short-term corporate pool built to extract yield by purchasing short-duration corporate credit sheets. Yield updated for June 2026.", risk: "Corporate Credit Spreads Risk: Holds short-term corporate credit and debt structures. If the industrial macroeconomic landscape tightens, default assumptions shift outward, creating direct principal drawdowns even inside short duration spans." },
+            "ICSH": { name: "iShares Ultra Short-Term Bond ETF (ICSH)", yield: 4.20, duration: 0.45, class: "Corporate ETF", expense: 0.08, tax: "Fully Taxable", desc: "Actively managed ultra-short corporate bond wrapper targeting prime investment-grade debt segments.", risk: "Exposed to institutional credit spread widenings. Highly defensive baseline profile but lacks the local state tax exemptions of sovereign cash storage layers." },
+            "MINT": { name: "PIMCO Enhanced Short Maturity Active ETF (MINT)", yield: 4.30, duration: 0.35, class: "Corporate ETF", expense: 0.35, tax: "Fully Taxable", desc: "PIMCO's flag premium active short-duration engine designed to capture institutional credit premiums.", risk: "Friction from higher manager fees (0.35%) requires active alpha generation to offset. Vulnerable to sudden corporate liquidity crunches." },
+            "FLOT": { name: "iShares Floating Rate Bond ETF (FLOT)", yield: 4.35, duration: 0.15, class: "Corporate ETF", expense: 0.20, tax: "Fully Taxable", desc: "Tracks investment-grade corporate floating-rate bonds with maturities between 0 to 5 years.", risk: "Mitigates interest rate duration risk via floating resets, but maintains corporate default and sector concentration risk profiles." },
+
+            "VTG": { name: "Vanguard Total Treasury ETF (VTG)", yield: 4.35, duration: 5.70, class: "Broad Treas ETF", expense: 0.03, tax: "State/Local Tax-Free", desc: "Blended index tracing long, intermediate, and short sovereign durations.", risk: "Severe Interest Rate Volatility Risk: A high blended duration profile (5.7Y) signals deep capital vulnerability. Every 1.00% absolute climb in macro curve levels directly triggers an estimated 5.70% markdown of fund net asset value." },
+            "VWALX": { name: "Vanguard High-Yield Tax-Exempt Fund (VWALX)", yield: 4.18, duration: 6.50, class: "Muni Fund", expense: 0.13, tax: "Federal Tax-Free", desc: "Municipal debt framework shielding onshore US taxpayers from massive federal tax bills. Yield updated for June 2026 adjustments.", risk: "Dual Threat Risk: Massive structural interest rate duration exposure (~6.5Y) paired with lower-tier localized municipal sub-sovereign credit risk. Exposed to regional fiscal stress cycles." },
+            "TIP": { name: "iShares TIPS Bond ETF (TIP)", yield: 2.10, duration: 6.40, class: "Inflation ETF", expense: 0.19, tax: "State-Free", desc: "Treasury Inflation-Protected Securities tracking vehicle engineered to index returns dynamically.", risk: "Disinflation/Macro Yield Risk: If macro inflation indicators decelerate faster than expectations, the underlying principal index readjusts downward, producing extensive market price losses aggravated by a long 6.4Y duration footprint." },
+            "WIP": { name: "SPDR International Inflation ETF (WIP)", yield: 2.40, duration: 7.00, class: "Intl Inflation", expense: 0.50, tax: "Fully Taxable", desc: "Tracks inflation-linked global sovereign assets domiciled outside the United States border structures.", risk: "Foreign Exchange (FX) & Geopolitical Risk: Total vulnerability to unhedged cross-border currency translations. Even if international yields remain flat, a strengthening US Dollar mechanically erodes fund net asset values and cash distributions." },
+            "PFF": { name: "iShares Preferred Sec ETF (PFF)", yield: 5.47, duration: 9.90, class: "Preferred ETF", expense: 0.45, tax: "Fully Taxable", desc: "Hybrid equity security tracker pooling high-yielding banking sector preferred papers. Yield normalized to June 2026 data parameters.", risk: "Extreme Capital/Correlation Risk: Preferred shares sit junior in capital structures. This fund exhibits extreme sensitivity to financial sector stress and behaves like equities during macro crises. High structural duration (9.9Y) ensures aggressive pricing drops when macro yields spike." },
+            
+            // Extended Macro Allocations added from complementary institutional models
+            "LQD": { name: "iShares iBoxx $ Investment Grade Corporate Bond ETF (LQD)", yield: 5.22, duration: 8.30, class: "Corporate Bond ETF", expense: 0.14, tax: "Fully Taxable", desc: "Benchmark liquid representation of high-grade U.S. corporate debt infrastructure tracking long-term paper metrics. Yield updated for June 2026.", risk: "High Duration Sensitivity: Massive exposure to duration extension risk (~8.3Y) leaves capital exposed to severe valuation corrections if secular real rates drift higher." },
+            "HYG": { name: "iShares iBoxx $ High Yield Corporate Bond ETF (HYG)", yield: 6.85, duration: 3.80, class: "High Yield Corporate", expense: 0.49, tax: "Fully Taxable", desc: "Tracks the liquid U.S. dollar high-yield corporate bond market, offering speculative credit spreads.", risk: "Significant default risk and high correlation to equity market drawdowns. Severe risk pricing expansion occurs during macro-economic tightening cycles." }
+        };
+
+        let activeProfile = "safety";
+        let engineCalculatedWeights = {};
+        let auditLogTrace = {};
+
+        function loadEngineState() {
+            if(localStorage.getItem('fx_engine_cached') === 'true') {
+                document.getElementById('capital').value = localStorage.getItem('fx_capital');
+                document.getElementById('taxJurisdiction').value = localStorage.getItem('fx_jurisdiction');
+                document.getElementById('horizon').value = localStorage.getItem('fx_horizon');
+                document.getElementById('liquidityTarget').value = localStorage.getItem('fx_liq_target');
+                activeProfile = localStorage.getItem('fx_active_profile') || 'safety';
+            } else {
+                activeProfile = 'safety';
+            }
+            updateProfileUI();
+        }
+
+        function saveEngineState() {
+            localStorage.setItem('fx_engine_cached', 'true');
+            localStorage.setItem('fx_capital', document.getElementById('capital').value);
+            localStorage.setItem('fx_jurisdiction', document.getElementById('taxJurisdiction').value);
+            localStorage.setItem('fx_horizon', document.getElementById('horizon').value);
+            localStorage.setItem('fx_liq_target', document.getElementById('liquidityTarget').value);
+            localStorage.setItem('fx_active_profile', activeProfile);
+        }
+
+        function resetEngineDefaults() {
+            localStorage.clear();
+            document.getElementById('capital').value = "250000";
+            document.getElementById('taxJurisdiction').value = "us_expat";
+            document.getElementById('horizon').value = "3";
+            document.getElementById('liquidityTarget').value = "20";
+            activeProfile = "safety";
+            updateProfileUI();
+            calculate();
+        }
+
+        function updateProfileState(profile) {
+            activeProfile = profile;
+            updateProfileUI();
+            calculate();
+        }
+
+        function updateProfileUI() {
+            document.getElementById('btn-safety').className = activeProfile === 'safety' ? "text-left p-3 rounded-xl border border-blue-500 bg-blue-950/40 transition-all w-full" : "text-left p-3 rounded-xl border border-slate-800 bg-slate-900/20 hover:border-slate-700/50 transition-all w-full";
+            document.getElementById('btn-balanced').className = activeProfile === 'balanced' ? "text-left p-3 rounded-xl border border-emerald-500 bg-emerald-950/40 transition-all w-full" : "text-left p-3 rounded-xl border border-slate-800 bg-slate-900/20 hover:border-slate-700/50 transition-all w-full";
+        }
+
+        function inspectAssetForensics(key) {
+            const asset = coreDatabase[key];
+            const weight = engineCalculatedWeights[key] || 0;
+            const traceText = auditLogTrace[key];
+            const badge = document.getElementById('modalBadge');
+
+            document.getElementById('modalAssetName').innerText = key;
+            document.getElementById('modalAssetClass').innerText = `${asset.class.toUpperCase()} STRUCTURE WRAPPER`;
+            document.getElementById('modalYield').innerText = asset.yield.toFixed(2) + "%";
+            document.getElementById('modalExpense').innerText = asset.expense === 0 ? "0.00%" : asset.expense.toFixed(2) + "%";
+            document.getElementById('modalDuration').innerText = asset.duration === 0 ? "None ($1 NAV)" : asset.duration.toFixed(1) + "Y";
+            document.getElementById('modalTax').innerText = asset.tax;
+            document.getElementById('modalDescription').innerText = asset.desc;
+            document.getElementById('modalRisk').innerText = asset.risk;
+            document.getElementById('modalTraceLog').innerText = traceText;
+
+            if(weight > 0) {
+                badge.innerText = `ACCEPTED (${weight}%)`;
+                badge.className = "text-[10px] font-mono font-bold tracking-widest px-2.5 py-1 rounded bg-emerald-950 text-emerald-400 border border-emerald-800";
+                document.getElementById('modalTraceLog').className = "p-3 bg-slate-950 border border-emerald-900/50 rounded-lg font-mono text-xs text-emerald-400 leading-relaxed";
+            } else {
+                badge.innerText = "BYPASSED / EXCLUDED";
+                badge.className = "text-[10px] font-mono font-bold tracking-widest px-2.5 py-1 rounded bg-slate-950 text-slate-500 border border-slate-800";
+                document.getElementById('modalTraceLog').className = "p-3 bg-slate-950 border border-slate-850 rounded-lg font-mono text-xs text-slate-400 leading-relaxed";
+            }
+
+            document.getElementById('forensicModal').classList.remove('hidden');
+        }
+
+        function closeForensicModal() {
+            document.getElementById('forensicModal').classList.add('hidden');
+        }
+
+        function calculate() {
+            saveEngineState();
+            
+            const capital = parseFloat(document.getElementById('capital').value) || 0;
+            const horizon = parseInt(document.getElementById('horizon').value);
+            const liqPct = parseInt(document.getElementById('liquidityTarget').value);
+            const jurisdiction = document.getElementById('taxJurisdiction').value;
+
+            document.getElementById('horizonLabel').innerText = horizon + " Mo";
+            document.getElementById('liquidityLabel').innerText = liqPct + "%";
+
+            Object.keys(coreDatabase).forEach(k => { engineCalculatedWeights[k] = 0; auditLogTrace[k] = ""; });
+            const isExpat = (jurisdiction === "us_expat");
+            const coreRemainder = 100 - liqPct;
+
+            // --- SEGMENT 1: IMMEDIATE LIQUIDITY SYSTEM ---
+            if (liqPct > 0) {
+                if (isExpat) {
+                    engineCalculatedWeights["Short T-Bills"] = Math.round(liqPct * 0.4);
+                    engineCalculatedWeights["VMFXX"] = liqPct - engineCalculatedWeights["Short T-Bills"];
+                    
+                    auditLogTrace["Short T-Bills"] = `PASSED SELECTION FILTER: Optimized raw sovereign yield parameter (4.15%) applied directly. Meets Expat profile guidelines.`;
+                    auditLogTrace["VMFXX"] = `PASSED SELECTION FILTER: High liquid sweep selected over VUSXX due to higher baseline execution interest spread.`;
+                    auditLogTrace["VUSXX"] = `BYPASSED BY EXPAT RULE: Expat tax blind profiles eliminate state immunity optimization gains. Deflected to VMFXX for superior raw interest performance.`;
+                    auditLogTrace["SWVXX"] = `BYPASSED BY MANDATE SCREEN: Prime asset commercial risk sheets rejected under core Capital Preservation criteria.`;
+                    auditLogTrace["SGOV"] = `BYPASSED BY EXPENSE ENGINE: Displaced by direct short T-Bills to fully avoid internal fund operational expense wrap (0.09%).`;
+                    auditLogTrace["SPAXX"] = `EXCLUDED BY FEE OVERHEAD: Severe internal marketing/wrap cost (0.42% expense ratio) fails algorithmic efficiency baseline.`;
+                    auditLogTrace["BIL"] = `BYPASSED BY ENGINE: Yield trailing raw treasury execution; structural allocation absorbed by fee-free direct Short T-Bills.`;
+                    auditLogTrace["USFR"] = `BYPASSED BY PROFILE MANDATE: Floating rate asset held in reserve layer; core allocation focused on pure state-free sovereign bills.`;
+                    auditLogTrace["TFLO"] = `BYPASSED BY PROFILE MANDATE: Complements USFR structures; redirected to institutional direct bill components to maintain low capital drag.`;
+                } else {
+                    if (jurisdiction === "us_ca") {
+                        engineCalculatedWeights["VUSXX"] = Math.round(liqPct * 0.6);
+                        engineCalculatedWeights["SGOV"] = liqPct - engineCalculatedWeights["VUSXX"];
+                        auditLogTrace["VUSXX"] = `PASSED ON-SHORE SELECTION: Aggressive state tax exposure detected. Structural pooling safely shields state tax liabilities.`;
+                        auditLogTrace["SGOV"] = `PASSED ON-SHORE SELECTION: Liquid ETF vehicle activated to enhance immediate liquidation availability while retaining state-level tax immunity.`;
+                        auditLogTrace["VMFXX"] = `BYPASSED BY TAX FILTER: Failed California/New York tax optimization filter. Agency holdings fully subject to local state penalties.`;
+                        auditLogTrace["BIL"] = `BYPASSED BY TAX ENGINE: Yield performance outpaced by optimized combination allocation of VUSXX and SGOV storage assets.`;
+                        auditLogTrace["USFR"] = `BYPASSED BY SELECTION ENGINE: Re-routed secondary line options to prioritize pure state-exempt instrument lines.`;
+                        auditLogTrace["TFLO"] = `BYPASSED BY SELECTION ENGINE: Matches USFR exclusion; state penalty metrics shift focus back to top sovereign vehicles.`;
+                    } else {
+                        engineCalculatedWeights["VUSXX"] = liqPct;
+                        auditLogTrace["VUSXX"] = `PASSED SELECTION FILTER: Satisfies standard state benchmark baseline models.`;
+                        auditLogTrace["BIL"] = `BYPASSED BY ALLOCATION RULES: Primary money market capacity absorbed completely by institutional VUSXX allocations.`;
+                        auditLogTrace["USFR"] = `BYPASSED BY RISK MATRICES: Capital deployment targets direct interest rate channels over variable tracking products.`;
+                        auditLogTrace["TFLO"] = `BYPASSED BY RISK MATRICES: Re-routed tracking logic directly back to major sovereign liquid sweeps.`;
+                    }
+                }
+            } else {
+                masterBucketSchema.immediate_cash.items.forEach(k => auditLogTrace[k] = "EXCLUDED: User explicitly configured Immediate Cash Target dial down to 0%.");
+            }
+
+            // --- SEGMENT 2: SHORT-HORIZON SYSTEMS ---
+            if (coreRemainder > 0) {
+                if (activeProfile === "safety") {
+                    if (horizon <= 12) {
+                        engineCalculatedWeights["Long T-Bills"] = Math.round(coreRemainder * 0.5);
+                        engineCalculatedWeights["2-Year Note"] = coreRemainder - engineCalculatedWeights["Long T-Bills"];
+
+                        auditLogTrace["Long T-Bills"] = `PASSED MATRIX: Direct maturity matching. T-Bills reach full execution value directly within user's active timeline profile.`;
+                        auditLogTrace["2-Year Note"] = `PASSED MATRIX: Long-term income stabilizer. Contractual coupon locks avoid ongoing rollover risk parameters.`;
+                        auditLogTrace["SCHO"] = `BYPASSED BY MANDATE: Rolling indexing architectures do not mature. Subject to temporary capital drawdown if macro target lines expand.`;
+                        auditLogTrace["VGSH"] = `BYPASSED BY MANDATE: Displaced by fee-free direct assets. Underlying structure carries minor secondary tracking discrepancies.`;
+                        auditLogTrace["SHY"] = `EXCLUDED BY FEE SCREEN: Failed Cost Optimization screening. Fee layout (0.15%) heavily penalized over identical SCHO/VGSH tracking vectors (0.03%).`;
+                        auditLogTrace["JPST"] = `BYPASSED BY CREDIT ENGINE: Corporate credit risk parameters completely blocked under strict Capital Preservation guidelines.`;
+                        auditLogTrace["ICSH"] = `BYPASSED BY CREDIT MANDATE: Ultra-short credit parameters unsuited for tight preservation allocations.`;
+                        auditLogTrace["MINT"] = `BYPASSED BY CREDIT MANDATE: Private active debt risks run counter to near-term sovereign protection requirements.`;
+                        auditLogTrace["FLOT"] = `BYPASSED BY DURATION RULE: Variable note risks pass core allocation capacity over to direct zero-drag notes.`;
+                    } else {
+                        engineCalculatedWeights["2-Year Note"] = coreRemainder;
+                        auditLogTrace["2-Year Note"] = `PASSED MATRIX: Primary structural anchor matching deployment window horizons exceeding standard near-term ranges.`;
+                        auditLogTrace["Long T-Bills"] = `BYPASSED BY MATURITY MATCH: Short horizon assets underperform on extended timeline metrics.`;
+                        auditLogTrace["ICSH"] = `BYPASSED BY MANDATE SCREEN: Displaced to sovereign assets to isolate capital from corporate curve variations.`;
+                        auditLogTrace["MINT"] = `BYPASSED BY FEE EFFICIENCY: Structurally managed active costs lower long-horizon performance targets.`;
+                        auditLogTrace["FLOT"] = `BYPASSED BY DIRECTIONAL LOGIC: Prefer fixed asset structures over corporate tracking channels on extended horizons.`;
+                    }
+                } else {
+                    engineCalculatedWeights["JPST"] = Math.round(coreRemainder * 0.6);
+                    engineCalculatedWeights["2-Year Note"] = coreRemainder - engineCalculatedWeights["JPST"];
+                    
+                    auditLogTrace["JPST"] = `PASSED SELECTION FILTER: Activated via relaxed profile guidelines. Yield premium (4.25%) accepted via low-duration corporate spread risk.`;
+                    auditLogTrace["2-Year Note"] = `PASSED SELECTION FILTER: Sovereign baseline hedge integrated to anchor private sector risk positions.`;
+                    auditLogTrace["Long T-Bills"] = `BYPASSED: Yield optimization algorithms prioritized private corporate paper lines over sovereign maturities.`;
+                    auditLogTrace["ICSH"] = `BYPASSED BY MATRIX CO-EFFICIENT: Highly correlated tracking to JPST; engine centralized short credit allocation in JPST for consolidation efficiency.`;
+                    auditLogTrace["MINT"] = `BYPASSED BY COST SCORING: High internal wrap fees (0.35%) cause negative selection rank compared to JPST (0.18%).`;
+                    auditLogTrace["FLOT"] = `BYPASSED BY DURATION SCORING: Floating corporate structural variations deferred to low-duration fixed spreads.`;
+                }
+            }
+
+            // --- SEGMENT 3: EXTENDED DURATION BOUNDS SYSTEM ---
+            masterBucketSchema.extended_macro.items.forEach(k => {
+                if (activeProfile === "safety") {
+                    if (coreDatabase[k].duration > 5.0) {
+                        auditLogTrace[k] = `EXCLUDED BY DURATION SHIELD: Strict safety parameters automatically block long-duration structures (${coreDatabase[k].duration}Y) to prevent capital drawdowns if interest rates climb.`;
+                    } else {
+                        auditLogTrace[k] = `EXCLUDED BY RISK MANDATE: Structural risk limits fail validation parameters under Capital Preservation protocols.`;
+                    }
+                } else {
+                    if (k === "PFF" && horizon > 12) {
+                        engineCalculatedWeights["PFF"] = Math.round(coreRemainder * 0.1);
+                        engineCalculatedWeights["JPST"] -= engineCalculatedWeights["PFF"];
+                        auditLogTrace["PFF"] = `PASSED SATELLITE RULE: Small exploratory high-yield asset allocation executed to capture private bank preferred distributions.`;
+                    } else {
+                        auditLogTrace[k] = `BYPASSED BY ALPHA ENGINE: Risk premium limits fail to offset fundamental downside currency/duration exposures.`;
+                    }
+                }
+            });
+
+            // Fallback catch-all to guarantee trace log structural continuity for newly added instruments
+            Object.keys(coreDatabase).forEach(k => {
+                if (!auditLogTrace[k]) {
+                    auditLogTrace[k] = `BYPASSED BY ENGINE LOGIC: Capital structurally redirected to higher-efficiency primary routing targets matching the active profile parameters.`;
+                }
+            });
+
+            // UI Render Sequence
+            const tbody = document.getElementById('allocationRows');
+            tbody.innerHTML = "";
+            let blendedYieldValue = 0;
+
+            Object.keys(masterBucketSchema).forEach(bucketKey => {
+                const bucketData = masterBucketSchema[bucketKey];
+                const headerTr = document.createElement('tr');
+                headerTr.className = "bg-slate-950 border-t border-slate-800 text-slate-400 font-bold text-xs uppercase tracking-wider";
+                headerTr.innerHTML = `<td colspan="4" class="px-6 py-2 bg-slate-950/90 text-indigo-400 font-mono text-[11px]">${bucketData.title}</td>`;
+                tbody.appendChild(headerTr);
+
+                bucketData.items.forEach(key => {
+                    const asset = coreDatabase[key];
+                    const weight = engineCalculatedWeights[key] || 0;
+                    const isSelected = weight > 0;
+                    const dollarAllocated = capital * (weight / 100);
+                    const traceText = auditLogTrace[key];
+                    
+                    if (isSelected) blendedYieldValue += (asset.yield * (weight / 100));
+
+                    const tr = document.createElement('tr');
+                    tr.className = isSelected ? "bg-slate-900/90 hover:bg-slate-800 text-slate-100 border-b border-slate-800 text-xs cursor-pointer transition-all" : "bg-slate-950/20 opacity-45 hover:opacity-80 border-b border-slate-900/60 text-xs text-slate-400 cursor-pointer transition-all";
+                    tr.setAttribute("onclick", `inspectAssetForensics('${key}')`);
+                    
+                    tr.innerHTML = `
+                        <td class="px-6 py-3">
+                            <div class="font-bold ${isSelected ? 'text-white' : 'text-slate-400'}">${key}</div>
+                            <div class="text-[10px] text-slate-500 font-mono truncate max-w-[160px]">${asset.class}</div>
+                        </td>
+                        <td class="px-6 py-3 text-center font-mono font-bold ${isSelected ? 'text-blue-400' : 'text-slate-600'}">${weight}%<br><span class="text-[10px] text-slate-500 font-normal">$${dollarAllocated.toLocaleString(undefined, {maximumFractionDigits:0})}</span></td>
+                        <td class="px-6 py-3 text-right font-mono text-emerald-400 font-bold">${asset.yield.toFixed(2)}%</td>
+                        <td class="px-6 py-3 font-mono text-[11px] leading-snug truncate max-w-xs ${isSelected ? 'text-emerald-400/90 font-medium' : 'text-slate-500'}">${traceText}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            });
+
+            document.getElementById('blendedYield').innerText = blendedYieldValue.toFixed(2) + "%";
+            document.getElementById('annualIncome').innerText = "$" + (capital * (blendedYieldValue / 100)).toLocaleString(undefined, {maximumFractionDigits: 0});
+            renderYieldCurveGraph();
+        }
+
+        function renderYieldCurveGraph() {
+            const svg = document.getElementById('yieldCurveSvg');
+            svg.innerHTML = '';
+            const pointsData = [
+                { label: "1M", yield: coreDatabase["Short T-Bills"].yield },
+                { label: "6M", yield: coreDatabase["Long T-Bills"].yield },
+                { label: "2Y", yield: coreDatabase["2-Year Note"].yield },
+                { label: "5Y", yield: coreDatabase["VTG"].yield - 0.1 },
+                { label: "10Y", yield: coreDatabase["VTG"].yield }
+            ];
+            const width = 1000, height = 80, paddingLeft = 50, paddingRight = 30, paddingTop = 15;
+            const graphWidth = width - paddingLeft - paddingRight, graphHeight = height - paddingTop - 20;
+            const minYield = 1.0, maxYield = 6.0;
+            function getX(idx) { return paddingLeft + (idx / (pointsData.length - 1)) * graphWidth; }
+            function getY(yVal) { return paddingTop + graphHeight - ((yVal - minYield) / (maxYield - minYield)) * graphHeight; }
+
+            let pathString = "";
+            pointsData.forEach((pt, idx) => {
+                const x = getX(idx), y = getY(pt.yield);
+                pathString += (idx === 0 ? "M" : "L") + ` ${x} ${y}`;
+                svg.innerHTML += `<text x="${x}" y="${height - 2}" fill="#64748b" font-family="monospace" font-size="9" text-anchor="middle">${pt.label}</text>`;
+                svg.innerHTML += `<circle cx="${x}" cy="${y}" r="3" fill="#3b82f6"/>`;
+                svg.innerHTML += `<text x="${x}" y="${y - 6}" fill="#34d399" font-family="monospace" font-size="9" font-weight="bold" text-anchor="middle">${pt.yield.toFixed(2)}%</text>`;
+            });
+            svg.innerHTML += `<path d="${pathString}" fill="none" stroke="#2563eb" stroke-width="2" />`;
+        }
+
+        document.getElementById('capital').addEventListener('input', calculate);
+        document.getElementById('taxJurisdiction').addEventListener('change', calculate);
+        document.getElementById('horizon').addEventListener('input', calculate);
+        document.getElementById('liquidityTarget').addEventListener('input', calculate);
+        
+        window.addEventListener('keydown', e => { if(e.key === 'Escape') closeForensicModal(); });
+
+        loadEngineState();
+        calculate();
+    </script>
+</body>
+</html>
