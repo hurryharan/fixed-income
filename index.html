@@ -130,12 +130,12 @@
                 </div>
             </div>
             <!-- Column headers -->
-            <div class="hidden sm:grid font-mono text-xs font-bold tracking-wider uppercase text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800" style="grid-template-columns:2fr 2.6fr 1fr 0.7fr 0.7fr 1fr;">
+            <div class="hidden sm:grid font-mono text-xs font-bold tracking-wider uppercase text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800" style="grid-template-columns:2.5fr 2.5fr 0.9fr 1.2fr 1.2fr 1.2fr;">
                 <div class="px-6 py-3">Asset / Instrument</div>
                 <div class="px-4 py-3">Forensic Selection Logic</div>
-                <div class="px-3 py-3 text-center">Weight Override</div>
-                <div class="px-3 py-3 text-center">Base Yld</div>
-                <div class="px-3 py-3 text-center">Net Yld</div>
+                <div class="px-3 py-3 text-center">Wt. Ovr</div>
+                <div class="px-3 py-3 text-right">Gross Yld</div>
+                <div class="px-3 py-3 text-right">Net Yld</div>
                 <div class="px-6 py-3 text-right">Allocated</div>
             </div>
             <div id="allocationAccordion" class="divide-y divide-slate-200 dark:divide-slate-800/50"></div>
@@ -164,6 +164,16 @@
                     <option value="us-muni-optimized">US Muni-Preferred State Exemption Strategy</option>
                     <option value="cross-border-dtaa">US-India DTAA Optimized Investment Overlay</option>
                 </select>
+                <div class="grid grid-cols-2 gap-4 mt-3">
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase text-slate-400 dark:text-slate-500 mb-1">Federal Bracket (%)</label>
+                        <input type="number" id="fedTaxRate" value="37" step="1" class="w-full bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-1.5 font-mono text-slate-700 dark:text-slate-300 text-xs focus:outline-none focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase text-slate-400 dark:text-slate-500 mb-1">State Bracket (%)</label>
+                        <input type="number" id="stateTaxRate" value="8" step="1" class="w-full bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-1.5 font-mono text-slate-700 dark:text-slate-300 text-xs focus:outline-none focus:border-blue-500">
+                    </div>
+                </div>
             </div>
             <div>
                 <div class="flex justify-between items-center mb-2">
@@ -498,7 +508,12 @@ window.addEventListener('DOMContentLoaded', () => {
     renderMarketScanner();
 
     document.getElementById('capital').addEventListener('input', () => { saveEngineCache(); executeAttributionMatrix(); });
-    document.getElementById('taxJurisdiction').addEventListener('change', () => { saveEngineCache(); executeAttributionMatrix(); });
+    document.getElementById('taxJurisdiction').addEventListener('change', () => { 
+        updateTaxFields();
+        saveEngineCache(); executeAttributionMatrix(); 
+    });
+    document.getElementById('fedTaxRate').addEventListener('input', () => { saveEngineCache(); executeAttributionMatrix(); });
+    document.getElementById('stateTaxRate').addEventListener('input', () => { saveEngineCache(); executeAttributionMatrix(); });
     document.getElementById('horizon').addEventListener('input', e => {
         document.getElementById('horizonVal').innerText = `${e.target.value} Months`;
         saveEngineCache(); executeAttributionMatrix();
@@ -652,28 +667,8 @@ function executeAttributionMatrix() {
     let blendedGross = 0, blendedNet = 0;
     Object.keys(ASSETS_MANIFEST).forEach(key => {
         const w = weights[key] || 0;
-        const meta = ASSETS_MANIFEST[key];
         const raw = getEffectiveYieldSignal(key).yield;
-        let net = raw;
-        // US High Bracket: assumes 37% federal + roughly 8% state = 45% total tax.
-        // State-free means only 37% tax applies. Fed-tax free means only 8% state applies.
-        if (targetJurisdiction === 'us-high') { 
-            if (meta.tax === 'State/Local Tax-Free') net = raw * (1 - 0.37);
-            else if (meta.tax === 'Fed Tax-Exempt') net = raw * (1 - 0.08);
-            else net = raw * (1 - 0.45); 
-        }
-        else if (targetJurisdiction === 'us-no-state') {
-            // US No-State: 37% federal tax. State/Local tax-free doesn't add extra benefit here.
-            if (meta.tax === 'Fed Tax-Exempt') net = raw; // fully tax free
-            else net = raw * (1 - 0.37); 
-        }
-        else if (targetJurisdiction === 'us-muni-optimized') { 
-            if (meta.tax === 'Fed Tax-Exempt' || meta.tax === 'State/Local Tax-Free') net = raw * 0.70;
-            else net = raw * 0.55; 
-        }
-        else if (targetJurisdiction === 'cross-border-dtaa') { 
-            net = raw * 0.85; 
-        }
+        const net = getNetYield(raw, key, targetJurisdiction);
         blendedGross += w * raw;
         blendedNet   += w * net;
     });
@@ -825,28 +820,40 @@ function renderAccordion(weights, logicResults, totalCapital, jurisdiction) {
         const otherKeys    = keys.filter(k => k !== primaryKey);
         const catWeight    = keys.reduce((s,k) => s + (weights[k]||0), 0);
         const catAlloc     = catWeight * totalCapital;
+        
+        let catGrossAlloc = 0;
+        let catNetAlloc = 0;
+        keys.forEach(k => {
+            const cw = weights[k] || 0;
+            const ys = getEffectiveYieldSignal(k).yield;
+            const nys = getNetYield(ys, k, jurisdiction);
+            catGrossAlloc += (cw * totalCapital * ys) / 100;
+            catNetAlloc += (cw * totalCapital * nys) / 100;
+        });
 
         const catDiv = document.createElement('div');
-        catDiv.className = 'category-block';
+        catDiv.className = 'category-block border-b border-slate-200/50 dark:border-slate-800/30';
 
         // Category header
         const headerDiv = document.createElement('div');
-        headerDiv.className = 'cat-row-header flex items-center justify-between px-5 py-3 cursor-pointer select-none transition-colors';
+        headerDiv.className = 'cat-row-header grid items-center py-3 cursor-pointer select-none transition-colors hover:bg-slate-50/50 dark:hover:bg-slate-800/20';
+        headerDiv.style.gridTemplateColumns = '2.5fr 2.5fr 0.9fr 1.2fr 1.2fr 1.2fr';
         headerDiv.onclick = () => toggleAccordion(catName);
         const isOpen = accordionOpenState[catName];
         headerDiv.innerHTML = `
-            <div class="flex items-center gap-2.5 min-w-0">
+            <div class="flex items-center gap-2.5 min-w-0 px-6">
                 <svg class="chevron-icon w-4 h-4 text-slate-400 flex-shrink-0 ${isOpen ? 'rotated' : ''}" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
                 </svg>
                 <span class="font-mono text-xs font-black tracking-widest uppercase text-slate-600 dark:text-slate-300 truncate">${catName}</span>
-                ${selectedKeys.length === 0 ? '<span class="text-[10px] font-mono px-2 py-1 rounded bg-slate-200 dark:bg-slate-800 text-slate-400 uppercase">No Selection</span>' : ''}
+                <span class="text-slate-400 dark:text-slate-500 hidden xl:block text-[9px] lowercase">(${keys.length} assets)</span>
             </div>
-            <div class="flex items-center gap-4 flex-shrink-0 font-mono">
-                <span class="text-slate-400 dark:text-slate-500 text-sm">${(catWeight*100).toFixed(1)}%</span>
-                <span class="font-bold text-slate-700 dark:text-slate-300 text-sm">$${catAlloc.toLocaleString(undefined,{maximumFractionDigits:0})}</span>
-                <span class="text-slate-400 dark:text-slate-500 hidden sm:block text-xs">${keys.length} assets</span>
-            </div>`;
+            <div class="px-4"></div>
+            <div class="px-3 text-center text-slate-500 dark:text-slate-400 font-mono text-sm">${(catWeight*100).toFixed(1)}%</div>
+            <div class="px-3 text-right text-slate-500 font-mono text-[11px] font-bold"><span class="block text-slate-600 dark:text-slate-300 ${catAlloc > 0 ? '' : 'hidden'}">$${catGrossAlloc.toLocaleString(undefined,{maximumFractionDigits:0})}</span></div>
+            <div class="px-3 text-right font-mono text-[11px] font-bold"><span class="block text-emerald-600 dark:text-emerald-400 ${catAlloc > 0 ? '' : 'hidden'}">$${catNetAlloc.toLocaleString(undefined,{maximumFractionDigits:0})}</span></div>
+            <div class="px-6 text-right font-bold text-slate-700 dark:text-slate-300 font-mono text-sm">$${catAlloc.toLocaleString(undefined,{maximumFractionDigits:0})}</div>
+        `;
         catDiv.appendChild(headerDiv);
 
         // Primary (selected) row — always visible
@@ -889,13 +896,16 @@ function buildAssetRow(key, weights, logicResults, totalCapital, jurisdiction, i
     else selBadge = 'text-[8px] font-mono font-black uppercase px-1.5 py-0.5 rounded border bg-slate-100 dark:bg-slate-800/80 text-slate-400 dark:text-slate-500 border-slate-200 dark:border-slate-700';
 
     const row = document.createElement('div');
-    row.style.cssText = 'display:grid; grid-template-columns:2fr 2.6fr 1fr 0.7fr 0.7fr 1fr; align-items:start;';
+    row.style.cssText = 'display:grid; grid-template-columns:2.5fr 2.5fr 0.9fr 1.2fr 1.2fr 1.2fr; align-items:start;';
     row.className = [
         isPrimary && isSelected ? 'selected-asset-row bg-white dark:bg-slate-900' : 'bg-slate-50/60 dark:bg-slate-950/30',
-        'border-b border-slate-200/50 dark:border-slate-800/30 cursor-pointer transition-colors hover:bg-blue-50/40 dark:hover:bg-blue-950/10',
+        'cursor-pointer transition-colors hover:bg-blue-50/40 dark:hover:bg-blue-950/10',
         !isSelected && !isPrimary ? 'opacity-70' : '',
     ].join(' ');
     row.onclick = e => { if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'BUTTON') openForensicModal(key); };
+
+    const grossD = (alloc * raw) / 100;
+    const netD = (alloc * net) / 100;
 
     row.innerHTML = `
         <div class="px-5 py-3">
@@ -915,13 +925,38 @@ function buildAssetRow(key, weights, logicResults, totalCapital, jurisdiction, i
                 ${isManual ? `<button onclick="clearSingleOverride('${key}')" title="Clear override" class="text-amber-500 hover:text-amber-700 text-xs leading-none p-1">✕</button>` : ''}
             </div>
         </div>
-        <div class="px-3 py-3 text-center font-mono text-sm ${isSelected ? 'text-slate-700 dark:text-slate-200' : 'text-slate-400 dark:text-slate-500'}">
-            ${raw.toFixed(2)}%${ys.source === 'auction' ? '<span class="block text-[10px] text-amber-500 uppercase mt-1">Auction</span>' : ''}
+        <div class="px-3 py-3 text-right font-mono text-sm ${isSelected ? 'text-slate-700 dark:text-slate-200' : 'text-slate-400 dark:text-slate-500'}">
+            <span class="block">${raw.toFixed(2)}%</span>
+            <span class="block text-[10px] mt-0.5 opacity-70 ${isSelected ? '' : 'hidden'}">$${grossD.toLocaleString(undefined,{maximumFractionDigits:0})}</span>
+            ${ys.source === 'auction' ? '<span class="block text-[9px] text-amber-500 uppercase mt-0.5">Auction</span>' : ''}
         </div>
-        <div class="px-3 py-3 text-center font-mono text-sm font-bold ${isSelected ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400 dark:text-slate-500'}">${net.toFixed(2)}%</div>
-        <div class="px-5 py-3 text-right font-mono font-bold text-sm ${isSelected ? 'text-slate-900 dark:text-white' : 'text-slate-400 dark:text-slate-500'}">$${alloc.toLocaleString(undefined,{maximumFractionDigits:0})}</div>
+        <div class="px-3 py-3 text-right font-mono text-sm font-bold ${isSelected ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400 dark:text-slate-500'}">
+            <span class="block">${net.toFixed(2)}%</span>
+            <span class="block text-[10px] mt-0.5 opacity-70 ${isSelected ? '' : 'hidden'}">$${netD.toLocaleString(undefined,{maximumFractionDigits:0})}</span>
+        </div>
+        <div class="px-6 py-3 text-right font-mono font-bold text-sm ${isSelected ? 'text-slate-900 dark:text-white' : 'text-slate-400 dark:text-slate-500'}">$${alloc.toLocaleString(undefined,{maximumFractionDigits:0})}</div>
     `;
     return row;
+}
+
+function getNetYield(raw, metaKey, jurisdiction) {
+    const meta = ASSETS_MANIFEST[metaKey];
+    if (!meta) return raw;
+    const fedRate = (parseFloat(document.getElementById('fedTaxRate').value) || 0) / 100;
+    const stateRate = (parseFloat(document.getElementById('stateTaxRate').value) || 0) / 100;
+    if (jurisdiction === 'cross-border-dtaa') return raw * (1 - fedRate); // simplifying cross-border with just the primary rate
+
+    let effFed = fedRate;
+    let effState = stateRate;
+    
+    if (meta.tax === 'State/Local Tax-Free') effState = 0;
+    else if (meta.tax === 'Fed Tax-Exempt') effFed = 0;
+    else if (meta.tax === 'India GIFT City Exempt') { effFed = 0; effState = 0; }
+    else if (meta.tax === 'Favorable (Depreciation)' || meta.tax === 'Tax-Deferred Growth') {
+        effFed *= 0.5; // simple heuristic for deferred/shielded
+        effState *= 0.5;
+    }
+    return raw * (1 - (effFed + effState));
 }
 
 function toggleAccordion(catName) {
@@ -1216,11 +1251,34 @@ function updateLiveAuctionSummary(logs) {
     }
 }
 
+function calculateNetYield(yieldVal, taxCategory) {
+    const fedTax = parseFloat(document.getElementById('fedTaxRate').value) / 100 || 0;
+    const stateTax = parseFloat(document.getElementById('stateTaxRate').value) / 100 || 0;
+    
+    let effectiveTax = 0;
+    if (taxCategory === 'taxable') effectiveTax = fedTax + stateTax;
+    else if (taxCategory === 'muni') effectiveTax = stateTax;
+    
+    return yieldVal * (1 - effectiveTax);
+}
+
 function toggleTheme() {
     const h = document.documentElement;
     if (h.classList.contains('dark')) { h.classList.remove('dark'); localStorage.setItem('fx_theme','light'); }
     else { h.classList.add('dark'); localStorage.setItem('fx_theme','dark'); }
     generateYieldCurvePlot();
+}
+
+function updateTaxFields() {
+    const val = document.getElementById('taxJurisdiction').value;
+    const fed = document.getElementById('fedTaxRate');
+    const st = document.getElementById('stateTaxRate');
+    if(val === 'us-high') { fed.value = 37; st.value = 8; }
+    else if(val === 'us-no-state') { fed.value = 37; st.value = 0; }
+    else if(val === 'us-muni-optimized') { fed.value = 37; st.value = 10; }
+    else if(val === 'cross-border-dtaa') { fed.value = 15; st.value = 0; }
+    saveEngineCache();
+    executeAttributionMatrix();
 }
 
 function showAppPage(pageKey) {
