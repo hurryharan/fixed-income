@@ -125,7 +125,11 @@
                     <h3 class="text-lg font-bold text-slate-900 dark:text-white">Forensic Allocation Matrix &amp; Yield Capture</h3>
                     <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5">Each category shows the selected asset. Expand ▾ to inspect alternatives considered.</p>
                 </div>
-                <div class="flex items-center gap-2">
+                <div class="flex flex-wrap items-center gap-2">
+                    <button onclick="executeAttributionMatrix()" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-mono font-bold rounded-lg transition-all shadow-sm">Re-Run Allocation</button>
+                    <button onclick="exportMatrixCSV()" class="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-[10px] font-mono font-bold rounded-lg transition-all border border-slate-300 dark:border-slate-700 flex items-center gap-1">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg> Export CSV
+                    </button>
                     <button onclick="showAppPage('diagnostics')" class="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-[10px] font-mono font-bold rounded-lg transition-all border border-slate-300 dark:border-slate-700">View Diagnostics</button>
                 </div>
             </div>
@@ -540,6 +544,8 @@ window.addEventListener('DOMContentLoaded', () => {
 // ═══════════════════════════════════════════════════════════════════
 // CORE ALLOCATION ENGINE
 // ═══════════════════════════════════════════════════════════════════
+let currentAllocatedWeights = {};
+
 function executeAttributionMatrix() {
     const totalCapital = parseFloat(document.getElementById('capital').value) || 0;
     const targetJurisdiction = document.getElementById('taxJurisdiction').value;
@@ -668,6 +674,8 @@ function executeAttributionMatrix() {
     Object.keys(ASSETS_MANIFEST).forEach(key => {
         logicResults[key] = buildForensicLogic(key, weights, autoWeights, manualWeights, targetJurisdiction, horizonMonths);
     });
+
+    currentAllocatedWeights = weights;
 
     // ── Summary yields ────────────────────────────────────────────
     let blendedGross = 0, blendedNet = 0;
@@ -1332,6 +1340,39 @@ function saveSettingsUI() {
         btn.classList.replace('bg-emerald-600', 'bg-blue-600');
         btn.classList.replace('hover:bg-emerald-700', 'hover:bg-blue-700');
     }, 2000);
+}
+
+function exportMatrixCSV() {
+    const totalCapital = parseFloat(document.getElementById('capital').value) || 0;
+    const targetJurisdiction = document.getElementById('taxJurisdiction').value;
+    
+    let csv = "Category,Asset Name,Ticker,Allocation (%),Allocated ($),Gross Yield (%),Net Yield (%)\n";
+    
+    Object.keys(STRUCTURAL_CATEGORIES).forEach(catName => {
+        const keys = STRUCTURAL_CATEGORIES[catName];
+        keys.forEach(k => {
+            const w = currentAllocatedWeights[k] || 0;
+            if (w > 0) {
+                const meta = ASSETS_MANIFEST[k];
+                const raw = getEffectiveYieldSignal(k).yield;
+                const net = getNetYield(raw, k, targetJurisdiction);
+                const alloc = totalCapital * w;
+                
+                const catEscaped = `"${catName.replace(/"/g, '""')}"`;
+                const nameEscaped = `"${meta.name.replace(/"/g, '""')}"`;
+                
+                csv += `${catEscaped},${nameEscaped},${k.toUpperCase()},${(w*100).toFixed(2)},${alloc.toFixed(2)},${raw.toFixed(2)},${net.toFixed(2)}\n`;
+            }
+        });
+    });
+    
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Allocation_Matrix_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
 }
 
 function showAppPage(pageKey) {
