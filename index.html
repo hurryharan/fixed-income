@@ -864,17 +864,27 @@ function renderAccordion(weights, logicResults, totalCapital, jurisdiction, blen
         headerDiv.onclick = () => toggleAccordion(catName);
         const isOpen = accordionOpenState[catName];
         let maxYield = -1;
+        let maxYieldNet = -1;
         let maxYieldKey = null;
         if (catWeight === 0 && keys.length > 0) {
             keys.forEach(k => {
                 const y = getEffectiveYieldSignal(k).yield;
-                if(y > maxYield) { maxYield = y; maxYieldKey = k; }
+                if(y > maxYield) { 
+                    maxYield = y; 
+                    maxYieldNet = getNetYield(y, k, jurisdiction);
+                    maxYieldKey = k; 
+                }
             });
         }
         let subText = `(${keys.length} assets)`;
-        if (catWeight === 0 && maxYieldKey) {
-            subText = `[Highest: ${ASSETS_MANIFEST[maxYieldKey].name} @ ${maxYield.toFixed(2)}%]`;
-        }
+
+        const col4Html = catAlloc > 0 
+            ? `<span class="block text-slate-600 dark:text-slate-300">$${catGrossAlloc.toLocaleString(undefined,{maximumFractionDigits:0})}</span>`
+            : (maxYieldKey ? `<span class="block text-slate-400 dark:text-slate-500 font-normal opacity-70">Top: ${maxYield.toFixed(2)}%</span>` : '');
+            
+        const col5Html = catAlloc > 0 
+            ? `<span class="block text-emerald-600 dark:text-emerald-400">$${catNetAlloc.toLocaleString(undefined,{maximumFractionDigits:0})}</span>`
+            : (maxYieldKey ? `<span class="block text-slate-400 dark:text-slate-500 font-normal opacity-70">Top: ${maxYieldNet.toFixed(2)}%</span>` : '');
 
         headerDiv.innerHTML = `
             <div class="flex items-center gap-2.5 min-w-0 px-6">
@@ -882,32 +892,34 @@ function renderAccordion(weights, logicResults, totalCapital, jurisdiction, blen
                     <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
                 </svg>
                 <span class="font-mono text-xs font-black tracking-widest uppercase text-slate-600 dark:text-slate-300 truncate">${catName}</span>
-                <span class="text-slate-400 dark:text-slate-500 hidden xl:block text-[9px] ${catWeight === 0 ? '' : 'lowercase'}">${subText}</span>
+                <span class="text-slate-400 dark:text-slate-500 hidden xl:block text-[9px] lowercase">${subText}</span>
             </div>
             <div class="px-4"></div>
             <div class="px-3 text-center text-slate-500 dark:text-slate-400 font-mono text-sm">${(catWeight*100).toFixed(1)}%</div>
-            <div class="px-3 text-right text-slate-500 font-mono text-[11px] font-bold"><span class="block text-slate-600 dark:text-slate-300 ${catAlloc > 0 ? '' : 'hidden'}">$${catGrossAlloc.toLocaleString(undefined,{maximumFractionDigits:0})}</span></div>
-            <div class="px-3 text-right font-mono text-[11px] font-bold"><span class="block text-emerald-600 dark:text-emerald-400 ${catAlloc > 0 ? '' : 'hidden'}">$${catNetAlloc.toLocaleString(undefined,{maximumFractionDigits:0})}</span></div>
+            <div class="px-3 text-right text-slate-500 font-mono text-[11px] font-bold">${col4Html}</div>
+            <div class="px-3 text-right font-mono text-[11px] font-bold">${col5Html}</div>
             <div class="px-6 text-right font-bold text-slate-700 dark:text-slate-300 font-mono text-sm">$${catAlloc.toLocaleString(undefined,{maximumFractionDigits:0})}</div>
         `;
         catDiv.appendChild(headerDiv);
 
-        // Primary (selected) row — always visible
+        // Selected rows — always visible
         const isSoleSelection = selectedKeys.length === 1;
-        if (primaryKey) catDiv.appendChild(buildAssetRow(primaryKey, weights, logicResults, totalCapital, jurisdiction, true, isSoleSelection));
+        selectedKeys.forEach(k => catDiv.appendChild(buildAssetRow(k, weights, logicResults, totalCapital, jurisdiction, true, isSoleSelection)));
 
         // Other assets — accordion body
         const bodyDiv = document.createElement('div');
         bodyDiv.className = `accordion-body ${isOpen ? 'open' : ''}`;
         bodyDiv.id = `acbody_${catName.replace(/[^a-z0-9]/gi,'_')}`;
 
-        if (otherKeys.length > 0) {
+        const unselectedKeys = keys.filter(k => (weights[k] || 0) === 0);
+
+        if (unselectedKeys.length > 0) {
             // Sub-header
             const sh = document.createElement('div');
             sh.className = 'px-5 py-1.5 bg-slate-50 dark:bg-slate-950/60 border-t border-b border-slate-200/50 dark:border-slate-800/40';
-            sh.innerHTML = `<span class="text-[9px] font-mono font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">Considered &amp; Not Selected (${otherKeys.length})</span>`;
+            sh.innerHTML = `<span class="text-[9px] font-mono font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">Considered &amp; Not Selected (${unselectedKeys.length})</span>`;
             bodyDiv.appendChild(sh);
-            otherKeys.forEach(k => bodyDiv.appendChild(buildAssetRow(k, weights, logicResults, totalCapital, jurisdiction, false, isSoleSelection)));
+            unselectedKeys.forEach(k => bodyDiv.appendChild(buildAssetRow(k, weights, logicResults, totalCapital, jurisdiction, false, isSoleSelection)));
         }
 
         catDiv.appendChild(bodyDiv);
