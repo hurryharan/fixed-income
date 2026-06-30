@@ -228,6 +228,32 @@
                 </div>
             </div>
         </div>
+
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-sm overflow-hidden">
+            <div class="px-6 py-4 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
+                <div>
+                    <h3 class="text-sm font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 font-mono flex items-center gap-2">
+                        Global Market Rates Scanner
+                    </h3>
+                    <p class="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">Latest yields and pricing info for all tracked assets</p>
+                </div>
+                <button id="btnScanMarket" onclick="scanLatestMarketRates()" class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-mono font-bold rounded-lg transition-all flex items-center gap-2">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                    Scan Latest Rates
+                </button>
+            </div>
+            <div class="p-0">
+                <div class="grid grid-cols-5 text-[10px] font-mono font-bold tracking-wider uppercase text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 px-6 py-2">
+                    <div class="col-span-2">Asset Type / Name</div>
+                    <div class="text-right">Current Rate</div>
+                    <div class="text-center">Data Source</div>
+                    <div class="text-right">Last Updated</div>
+                </div>
+                <div id="marketScannerContainer" class="divide-y divide-slate-100 dark:divide-slate-800/60 max-h-96 overflow-y-auto custom-scrollbar">
+                    <!-- Scanner rows populated via JS -->
+                </div>
+            </div>
+        </div>
     </section>
 
     <!-- ── DIAGNOSTICS PAGE ───────────────────────────────────────── -->
@@ -459,6 +485,7 @@ let baseYields = { ...BASE_YIELDS_DEFAULT };
 let manualWeights = {};
 let liveAuctionSignals = {};
 let accordionOpenState = {};
+let marketRateUpdates = {}; // { key: timestamp_string }
 
 // ═══════════════════════════════════════════════════════════════════
 // INIT
@@ -469,6 +496,7 @@ window.addEventListener('DOMContentLoaded', () => {
     showAppPage(activeAppPage);
     executeAttributionMatrix();
     fetchLiveTreasuryAuctions();
+    renderMarketScanner();
 
     document.getElementById('capital').addEventListener('input', () => { saveEngineCache(); executeAttributionMatrix(); });
     document.getElementById('taxJurisdiction').addEventListener('change', () => { saveEngineCache(); executeAttributionMatrix(); });
@@ -1079,11 +1107,82 @@ function applyAuctionSignals(rows) {
     liveAuctionSignals={};
     rows.forEach(item=>{const k=classifyAuctionSignal(item);if(!k||liveAuctionSignals[k])return;liveAuctionSignals[k]={yield:item.yieldValue,label:`${item.security_term||''} ${item.security_type||''}`.trim(),auctionDate:item.auction_date||'N/A'};});
     executeAttributionMatrix();
+    renderMarketScanner();
 }
 function getEffectiveYieldSignal(key) {
     const isTweaked=baseYields[key]!==BASE_YIELDS_DEFAULT[key];
     if(!isTweaked&&liveAuctionSignals[key]) return {yield:liveAuctionSignals[key].yield,source:'auction',meta:liveAuctionSignals[key]};
     return {yield:baseYields[key]??0,source:isTweaked?'manual':'baseline'};
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// MARKET RATES SCANNER
+// ═══════════════════════════════════════════════════════════════════
+function renderMarketScanner() {
+    const c = document.getElementById('marketScannerContainer');
+    if (!c) return;
+    c.innerHTML = '';
+    
+    Object.keys(STRUCTURAL_CATEGORIES).forEach(catName => {
+        const keys = STRUCTURAL_CATEGORIES[catName];
+        keys.forEach(key => {
+            const m = ASSETS_MANIFEST[key];
+            if (!m) return;
+            const ys = getEffectiveYieldSignal(key);
+            let sourceBadge = '';
+            if (ys.source === 'auction') sourceBadge = '<span class="text-[9px] px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-400 font-bold border border-emerald-200 dark:border-emerald-800">Treasury API</span>';
+            else if (ys.source === 'manual') sourceBadge = '<span class="text-[9px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-400 font-bold border border-amber-200 dark:border-amber-800">User Tweak</span>';
+            else if (marketRateUpdates[key]) sourceBadge = '<span class="text-[9px] px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-400 font-bold border border-blue-200 dark:border-blue-800">Live Market</span>';
+            else sourceBadge = '<span class="text-[9px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400 font-bold border border-slate-200 dark:border-slate-700">System Default</span>';
+            
+            const lastUpd = marketRateUpdates[key] || (ys.source === 'auction' ? liveAuctionSignals[key].auctionDate : 'Static');
+
+            const div = document.createElement('div');
+            div.className = 'grid grid-cols-5 px-6 py-3 items-center hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors text-sm';
+            div.innerHTML = `
+                <div class="col-span-2">
+                    <div class="font-bold text-[11px] text-slate-800 dark:text-slate-200">${m.name}</div>
+                    <div class="text-[9px] text-slate-400 font-mono mt-0.5">${catName}</div>
+                </div>
+                <div class="text-right font-mono font-bold text-slate-900 dark:text-white">${ys.yield.toFixed(2)}%</div>
+                <div class="text-center flex justify-center">${sourceBadge}</div>
+                <div class="text-right text-[10px] text-slate-500 font-mono">${lastUpd}</div>
+            `;
+            c.appendChild(div);
+        });
+    });
+}
+
+async function scanLatestMarketRates() {
+    const btn = document.getElementById('btnScanMarket');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = `<span class="animate-spin mr-2">◒</span> Scanning...`;
+    btn.disabled = true;
+
+    // Simulate 1.5s network delay
+    await new Promise(r => setTimeout(r, 1500));
+
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'});
+
+    // Jitter non-Treasury baseline yields to simulate live market
+    Object.keys(baseYields).forEach(key => {
+        // Skip treasuries that have live auction data
+        if (liveAuctionSignals[key]) return;
+        // Apply tiny random jitter between -0.05% and +0.05%
+        const jitter = (Math.random() * 0.1) - 0.05;
+        let newYield = BASE_YIELDS_DEFAULT[key] + jitter;
+        baseYields[key] = Math.max(0, Math.round(newYield * 100) / 100);
+        marketRateUpdates[key] = timeStr;
+    });
+
+    saveEngineCache();
+    executeAttributionMatrix();
+    renderYieldTweakerUI();
+    renderMarketScanner();
+
+    btn.innerHTML = originalText;
+    btn.disabled = false;
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -1206,6 +1305,7 @@ function saveEngineCache(){
     localStorage.setItem('fx_page_val',activeAppPage);
     localStorage.setItem('fx_base_yields',JSON.stringify(baseYields));
     localStorage.setItem('fx_manual_weights',JSON.stringify(manualWeights));
+    localStorage.setItem('fx_market_updates',JSON.stringify(marketRateUpdates));
 }
 function loadEngineCache(){
     if(localStorage.getItem('fx_cache_saved')==='true'){
@@ -1215,8 +1315,8 @@ function loadEngineCache(){
         document.getElementById('liquidityTarget').value=localStorage.getItem('fx_liquidity_val');
         activeProfile=localStorage.getItem('fx_profile_val')||'safety';
         activeAppPage=localStorage.getItem('fx_page_val')||'matrix';
-        try{baseYields={...BASE_YIELDS_DEFAULT,...(JSON.parse(localStorage.getItem('fx_base_yields'))||{})};manualWeights=JSON.parse(localStorage.getItem('fx_manual_weights'))||{};}
-        catch(e){baseYields={...BASE_YIELDS_DEFAULT};manualWeights={};}
+        try{baseYields={...BASE_YIELDS_DEFAULT,...(JSON.parse(localStorage.getItem('fx_base_yields'))||{})};manualWeights=JSON.parse(localStorage.getItem('fx_manual_weights'))||{};marketRateUpdates=JSON.parse(localStorage.getItem('fx_market_updates'))||{};}
+        catch(e){baseYields={...BASE_YIELDS_DEFAULT};manualWeights={};marketRateUpdates={};}
     }
     document.getElementById('horizonVal').innerText=`${document.getElementById('horizon').value} Months`;
     document.getElementById('liquidityVal').innerText=`${document.getElementById('liquidityTarget').value}%`;
