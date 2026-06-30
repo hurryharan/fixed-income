@@ -669,9 +669,6 @@ function executeAttributionMatrix() {
         logicResults[key] = buildForensicLogic(key, weights, autoWeights, manualWeights, targetJurisdiction, horizonMonths);
     });
 
-    // ── Render accordion ─────────────────────────────────────────
-    renderAccordion(weights, logicResults, totalCapital, targetJurisdiction);
-
     // ── Summary yields ────────────────────────────────────────────
     let blendedGross = 0, blendedNet = 0;
     Object.keys(ASSETS_MANIFEST).forEach(key => {
@@ -682,6 +679,9 @@ function executeAttributionMatrix() {
         blendedNet   += w * net;
     });
     
+    // ── Render accordion ─────────────────────────────────────────
+    renderAccordion(weights, logicResults, totalCapital, targetJurisdiction, blendedGross, blendedNet);
+
     const grossD = (totalCapital * blendedGross) / 100;
     const netD = (totalCapital * blendedNet) / 100;
 
@@ -822,9 +822,11 @@ function buildForensicLogic(key, weights, autoWeights, manualWeights, jurisdicti
 // ═══════════════════════════════════════════════════════════════════
 // ACCORDION RENDERER
 // ═══════════════════════════════════════════════════════════════════
-function renderAccordion(weights, logicResults, totalCapital, jurisdiction) {
+function renderAccordion(weights, logicResults, totalCapital, jurisdiction, blendedGross, blendedNet) {
     const accordion = document.getElementById('allocationAccordion');
     accordion.innerHTML = '';
+    
+    let totalWeight = 0;
 
     Object.keys(STRUCTURAL_CATEGORIES).forEach(catName => {
         const keys = STRUCTURAL_CATEGORIES[catName];
@@ -832,6 +834,7 @@ function renderAccordion(weights, logicResults, totalCapital, jurisdiction) {
         const primaryKey   = selectedKeys[0] || null;
         const otherKeys    = keys.filter(k => k !== primaryKey);
         const catWeight    = keys.reduce((s,k) => s + (weights[k]||0), 0);
+        totalWeight += catWeight;
         const catAlloc     = catWeight * totalCapital;
         
         let catGrossAlloc = 0;
@@ -889,6 +892,27 @@ function renderAccordion(weights, logicResults, totalCapital, jurisdiction) {
         catDiv.appendChild(bodyDiv);
         accordion.appendChild(catDiv);
     });
+
+    // ── Append Footer Totals ──────────────────────────────────────
+    const footerDiv = document.createElement('div');
+    footerDiv.className = 'grid items-center py-3 bg-slate-100 dark:bg-slate-900 border-t-2 border-slate-300 dark:border-slate-800';
+    footerDiv.style.gridTemplateColumns = '2.5fr 2.5fr 0.9fr 1.2fr 1.2fr 1.2fr';
+    
+    const grossD = (totalCapital * blendedGross) / 100;
+    const netD = (totalCapital * blendedNet) / 100;
+    const isUnderAllocated = Math.abs(totalWeight - 1.0) > 0.001;
+
+    footerDiv.innerHTML = `
+        <div class="px-6 font-mono text-xs font-black tracking-widest uppercase text-slate-800 dark:text-white">Portfolio Total</div>
+        <div class="px-4 text-[10px] text-slate-500 dark:text-slate-400 italic flex items-center">
+            ${isUnderAllocated ? `<span class="bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-400 px-2 py-0.5 rounded mr-2 uppercase font-bold border border-amber-200 dark:border-amber-800">Weights do not total 100%</span>` : ''}
+        </div>
+        <div class="px-3 text-center text-slate-900 dark:text-white font-mono text-sm font-bold ${isUnderAllocated ? 'text-amber-600 dark:text-amber-400' : ''}">${(totalWeight*100).toFixed(1)}%</div>
+        <div class="px-3 text-right text-slate-900 dark:text-white font-mono text-[11px] font-bold"><span class="block">${blendedGross.toFixed(2)}%</span><span class="block text-blue-600 dark:text-blue-400">$${grossD.toLocaleString(undefined,{maximumFractionDigits:0})}</span></div>
+        <div class="px-3 text-right text-slate-900 dark:text-white font-mono text-[11px] font-bold"><span class="block">${blendedNet.toFixed(2)}%</span><span class="block text-emerald-600 dark:text-emerald-400">$${netD.toLocaleString(undefined,{maximumFractionDigits:0})}</span></div>
+        <div class="px-6 text-right font-bold text-slate-900 dark:text-white font-mono text-sm ${isUnderAllocated ? 'text-amber-600 dark:text-amber-400' : ''}">$${(totalWeight * totalCapital).toLocaleString(undefined,{maximumFractionDigits:0})}</div>
+    `;
+    accordion.appendChild(footerDiv);
 }
 
 function buildAssetRow(key, weights, logicResults, totalCapital, jurisdiction, isPrimary) {
