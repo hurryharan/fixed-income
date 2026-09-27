@@ -149,7 +149,7 @@
     </section>
 
     <!-- ── SETTINGS PAGE ─────────────────────────────────────────── -->
-    <section id="pageSettings" class="hidden grid grid-cols-1 lg:grid-cols-2 gap-8">
+    <section id="pageSettings" class="hidden grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
         <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-lg shadow-sm space-y-6">
             <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-3">
                 <h2 class="text-xl font-bold text-slate-900 dark:text-white">Portfolio Parameters</h2>
@@ -275,15 +275,15 @@
                 </button>
             </div>
         </div>
-        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-lg shadow-sm space-y-4">
-            <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-3">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-lg shadow-sm flex flex-col h-full">
+            <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-3 shrink-0">
                 <div class="flex items-center gap-2">
                     <h2 class="text-xl font-bold text-slate-900 dark:text-white">Yield Parameter Tuning</h2>
                     <span id="tweakIndicatorCount" class="hidden bg-amber-500 text-slate-950 text-[10px] px-1.5 rounded-full font-black">0</span>
                 </div>
                 <button onclick="resetYieldTweaks()" class="text-[10px] font-mono text-amber-600 dark:text-amber-500 border border-amber-200 dark:border-amber-900/40 px-2 py-1 rounded transition-all">Reset Baselines</button>
             </div>
-            <div class="space-y-3 max-h-[640px] overflow-y-auto pr-1 custom-scrollbar" id="yieldTweakerInputsList"></div>
+            <div class="space-y-3 flex-1 min-h-[450px] lg:min-h-0 overflow-y-auto pr-1 mt-4 custom-scrollbar" id="yieldTweakerInputsList"></div>
         </div>
     </section>
 
