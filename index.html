@@ -164,7 +164,7 @@
             </div>
             <div>
                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">Tax Jurisdiction Target</label>
-                <select id="taxJurisdiction" class="w-full bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-4 py-2.5 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:border-blue-500 font-medium">
+                <select id="taxJurisdiction" onchange="updateTaxFields()" class="w-full bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-4 py-2.5 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:border-blue-500 font-medium">
                     <option value="us-high">US High Bracket (37% Fed + State Tax)</option>
                     <option value="us-no-state">US No-State-Tax (TX, FL, Expat)</option>
                     <option value="us-muni-optimized">US Muni-Preferred State Exemption Strategy</option>
@@ -2342,6 +2342,8 @@ function saveEngineCache(){
     localStorage.setItem('fx_cache_saved','true');
     localStorage.setItem('fx_capital_val',document.getElementById('capital').value);
     localStorage.setItem('fx_jurisdiction_val',document.getElementById('taxJurisdiction').value);
+    localStorage.setItem('fx_fed_tax_val',document.getElementById('fedTaxRate').value);
+    localStorage.setItem('fx_state_tax_val',document.getElementById('stateTaxRate').value);
     localStorage.setItem('fx_horizon_val',document.getElementById('horizon').value);
     localStorage.setItem('fx_liquidity_val',document.getElementById('liquidityTarget').value);
     localStorage.setItem('fx_profile_val',activeProfile);
@@ -2352,14 +2354,26 @@ function saveEngineCache(){
 }
 function loadEngineCache(){
     if(localStorage.getItem('fx_cache_saved')==='true'){
-        document.getElementById('capital').value=localStorage.getItem('fx_capital_val');
-        document.getElementById('taxJurisdiction').value=localStorage.getItem('fx_jurisdiction_val');
-        document.getElementById('horizon').value=localStorage.getItem('fx_horizon_val');
-        document.getElementById('liquidityTarget').value=localStorage.getItem('fx_liquidity_val');
+        if(localStorage.getItem('fx_capital_val')) document.getElementById('capital').value=localStorage.getItem('fx_capital_val');
+        if(localStorage.getItem('fx_jurisdiction_val')) document.getElementById('taxJurisdiction').value=localStorage.getItem('fx_jurisdiction_val');
+        
+        if(localStorage.getItem('fx_fed_tax_val') !== null && localStorage.getItem('fx_fed_tax_val') !== undefined) {
+            document.getElementById('fedTaxRate').value=localStorage.getItem('fx_fed_tax_val');
+        }
+        if(localStorage.getItem('fx_state_tax_val') !== null && localStorage.getItem('fx_state_tax_val') !== undefined) {
+            document.getElementById('stateTaxRate').value=localStorage.getItem('fx_state_tax_val');
+        } else {
+            updateTaxFields();
+        }
+
+        if(localStorage.getItem('fx_horizon_val')) document.getElementById('horizon').value=localStorage.getItem('fx_horizon_val');
+        if(localStorage.getItem('fx_liquidity_val')) document.getElementById('liquidityTarget').value=localStorage.getItem('fx_liquidity_val');
         activeProfile=localStorage.getItem('fx_profile_val')||'safety';
         activeAppPage=localStorage.getItem('fx_page_val')||'matrix';
         try{baseYields={...BASE_YIELDS_DEFAULT,...(JSON.parse(localStorage.getItem('fx_base_yields'))||{})};manualWeights=JSON.parse(localStorage.getItem('fx_manual_weights'))||{};marketRateUpdates=JSON.parse(localStorage.getItem('fx_market_updates'))||{};}
         catch(e){baseYields={...BASE_YIELDS_DEFAULT};manualWeights={};marketRateUpdates={};}
+    } else {
+        updateTaxFields();
     }
     document.getElementById('horizonVal').innerText=`${document.getElementById('horizon').value} Months`;
     document.getElementById('liquidityVal').innerText=`${document.getElementById('liquidityTarget').value}%`;
