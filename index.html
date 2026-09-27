@@ -279,19 +279,41 @@
                         <button id="btnClearScannerSearch" onclick="clearScannerSearch()" class="hidden absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs font-bold px-1">&times;</button>
                     </div>
 
-                    <!-- Category Filter Dropdown -->
-                    <select id="scannerCategoryFilter" onchange="onScannerFilterChange()" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 dark:text-slate-300 focus:outline-none focus:border-blue-500 max-w-[200px]">
-                        <option value="all">All Categories</option>
-                    </select>
+                    <!-- Category Multi-Select Dropdown -->
+                    <div id="containerCatMultiSelect" class="relative min-w-[160px] max-w-[210px]">
+                        <button id="btnCatMultiSelect" type="button" onclick="toggleMultiSelectDropdown('cat', event)" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 dark:text-slate-300 focus:outline-none focus:border-blue-500 flex items-center justify-between gap-2 font-mono">
+                            <span id="labelCatMultiSelect" class="truncate">All Categories</span>
+                            <svg class="w-3 h-3 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </button>
+                        <div id="panelCatMultiSelect" class="hidden absolute left-0 top-full mt-1 w-64 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-xl p-2 z-30 space-y-1 max-h-64 overflow-y-auto custom-scrollbar font-mono text-xs">
+                            <div class="flex items-center justify-between px-2 py-1 border-b border-slate-100 dark:border-slate-800 text-[10px] text-slate-400 font-bold uppercase">
+                                <span>Categories</span>
+                                <div class="flex gap-2">
+                                    <button type="button" onclick="selectAllCategories(event)" class="text-blue-500 hover:underline">All</button>
+                                    <button type="button" onclick="clearAllCategories(event)" class="text-amber-500 hover:underline">Clear</button>
+                                </div>
+                            </div>
+                            <div id="listCatMultiSelect" class="space-y-0.5"></div>
+                        </div>
+                    </div>
 
-                    <!-- Data Source Filter Dropdown -->
-                    <select id="scannerSourceFilter" onchange="onScannerFilterChange()" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 dark:text-slate-300 focus:outline-none focus:border-blue-500">
-                        <option value="all">All Sources</option>
-                        <option value="auction">Treasury API</option>
-                        <option value="live">Live Market</option>
-                        <option value="manual">User Tweak</option>
-                        <option value="hardcoded">Hardcoded (AI)</option>
-                    </select>
+                    <!-- Data Source Multi-Select Dropdown -->
+                    <div id="containerSourceMultiSelect" class="relative min-w-[140px]">
+                        <button id="btnSourceMultiSelect" type="button" onclick="toggleMultiSelectDropdown('source', event)" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 dark:text-slate-300 focus:outline-none focus:border-blue-500 flex items-center justify-between gap-2 font-mono">
+                            <span id="labelSourceMultiSelect" class="truncate">All Sources</span>
+                            <svg class="w-3 h-3 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </button>
+                        <div id="panelSourceMultiSelect" class="hidden absolute left-0 top-full mt-1 w-52 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-xl p-2 z-30 space-y-1 font-mono text-xs">
+                            <div class="flex items-center justify-between px-2 py-1 border-b border-slate-100 dark:border-slate-800 text-[10px] text-slate-400 font-bold uppercase">
+                                <span>Data Sources</span>
+                                <div class="flex gap-2">
+                                    <button type="button" onclick="selectAllSources(event)" class="text-blue-500 hover:underline">All</button>
+                                    <button type="button" onclick="clearAllSources(event)" class="text-amber-500 hover:underline">Clear</button>
+                                </div>
+                            </div>
+                            <div id="listSourceMultiSelect" class="space-y-0.5"></div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="flex items-center gap-2">
@@ -1316,37 +1338,196 @@ function getEffectiveYieldSignal(key) {
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// MARKET RATES SCANNER & FILTERS
+// MARKET RATES SCANNER & MULTI-SELECT FILTERS
 // ═══════════════════════════════════════════════════════════════════
 let scannerState = {
     search: '',
-    category: 'all',
-    source: 'all',
-    sortBy: 'default', // 'default', 'name', 'yield', 'source', 'updated', 'category'
-    sortDir: 'desc'    // 'desc', 'asc'
+    selectedCategories: [], // Empty = All categories selected
+    selectedSources: [],    // Empty = All sources selected
+    sortBy: 'default',
+    sortDir: 'desc'
 };
 
-function initScannerCategoryOptions() {
-    const sel = document.getElementById('scannerCategoryFilter');
-    if (!sel || sel.options.length > 1) return;
-    
-    Object.keys(STRUCTURAL_CATEGORIES).forEach(cat => {
-        const opt = document.createElement('option');
-        opt.value = cat;
-        opt.textContent = cat;
-        sel.appendChild(opt);
+const ALL_DATA_SOURCES = [
+    { id: 'auction', label: 'Treasury API' },
+    { id: 'live', label: 'Live Market' },
+    { id: 'manual', label: 'User Tweak' },
+    { id: 'hardcoded', label: 'Hardcoded (AI)' }
+];
+
+let multiSelectInitialized = false;
+
+function initMultiSelectUI() {
+    if (multiSelectInitialized) return;
+    multiSelectInitialized = true;
+
+    renderCategoryMultiSelectList();
+    renderSourceMultiSelectList();
+
+    document.addEventListener('click', (e) => {
+        const catContainer = document.getElementById('containerCatMultiSelect');
+        const srcContainer = document.getElementById('containerSourceMultiSelect');
+        if (catContainer && !catContainer.contains(e.target)) {
+            document.getElementById('panelCatMultiSelect')?.classList.add('hidden');
+        }
+        if (srcContainer && !srcContainer.contains(e.target)) {
+            document.getElementById('panelSourceMultiSelect')?.classList.add('hidden');
+        }
     });
+}
+
+function toggleMultiSelectDropdown(type, e) {
+    if (e) e.stopPropagation();
+    if (type === 'cat') {
+        const panel = document.getElementById('panelCatMultiSelect');
+        const other = document.getElementById('panelSourceMultiSelect');
+        if (other) other.classList.add('hidden');
+        if (panel) panel.classList.toggle('hidden');
+    } else if (type === 'source') {
+        const panel = document.getElementById('panelSourceMultiSelect');
+        const other = document.getElementById('panelCatMultiSelect');
+        if (other) other.classList.add('hidden');
+        if (panel) panel.classList.toggle('hidden');
+    }
+}
+
+function renderCategoryMultiSelectList() {
+    const container = document.getElementById('listCatMultiSelect');
+    if (!container) return;
+    const allCats = Object.keys(STRUCTURAL_CATEGORIES);
+
+    container.innerHTML = allCats.map(cat => {
+        const isChecked = scannerState.selectedCategories.length === 0 || scannerState.selectedCategories.includes(cat);
+        return `
+            <label class="flex items-center gap-2 px-2 py-1 hover:bg-slate-100 dark:hover:bg-slate-800/80 rounded cursor-pointer text-[11px] text-slate-700 dark:text-slate-300">
+                <input type="checkbox" value="${cat}" ${isChecked ? 'checked' : ''} onchange="onCategoryCheckboxChange()" class="rounded border-slate-300 dark:border-slate-700 text-blue-600 focus:ring-blue-500 accent-blue-600">
+                <span class="truncate">${cat}</span>
+            </label>
+        `;
+    }).join('');
+
+    updateCategoryMultiSelectLabel();
+}
+
+function onCategoryCheckboxChange() {
+    const allCats = Object.keys(STRUCTURAL_CATEGORIES);
+    const container = document.getElementById('listCatMultiSelect');
+    const checkedEls = container ? container.querySelectorAll('input[type="checkbox"]:checked') : [];
+    const checkedVals = Array.from(checkedEls).map(el => el.value);
+
+    if (checkedVals.length === 0) {
+        scannerState.selectedCategories = ['__NONE__'];
+    } else if (checkedVals.length === allCats.length) {
+        scannerState.selectedCategories = [];
+    } else {
+        scannerState.selectedCategories = checkedVals;
+    }
+
+    updateCategoryMultiSelectLabel();
+    renderMarketScanner();
+}
+
+function updateCategoryMultiSelectLabel() {
+    const label = document.getElementById('labelCatMultiSelect');
+    if (!label) return;
+    const allCats = Object.keys(STRUCTURAL_CATEGORIES);
+    const count = scannerState.selectedCategories.length;
+
+    if (count === 0 || scannerState.selectedCategories.length === allCats.length) {
+        label.textContent = 'All Categories';
+    } else if (scannerState.selectedCategories.includes('__NONE__')) {
+        label.textContent = '0 Categories';
+    } else if (count === 1) {
+        label.textContent = scannerState.selectedCategories[0];
+    } else {
+        label.textContent = `${count} Categories`;
+    }
+}
+
+function selectAllCategories(e) {
+    if (e) e.stopPropagation();
+    scannerState.selectedCategories = [];
+    renderCategoryMultiSelectList();
+    renderMarketScanner();
+}
+
+function clearAllCategories(e) {
+    if (e) e.stopPropagation();
+    scannerState.selectedCategories = ['__NONE__'];
+    renderCategoryMultiSelectList();
+    renderMarketScanner();
+}
+
+function renderSourceMultiSelectList() {
+    const container = document.getElementById('listSourceMultiSelect');
+    if (!container) return;
+
+    container.innerHTML = ALL_DATA_SOURCES.map(src => {
+        const isChecked = scannerState.selectedSources.length === 0 || scannerState.selectedSources.includes(src.id);
+        return `
+            <label class="flex items-center gap-2 px-2 py-1 hover:bg-slate-100 dark:hover:bg-slate-800/80 rounded cursor-pointer text-[11px] text-slate-700 dark:text-slate-300">
+                <input type="checkbox" value="${src.id}" ${isChecked ? 'checked' : ''} onchange="onSourceCheckboxChange()" class="rounded border-slate-300 dark:border-slate-700 text-blue-600 focus:ring-blue-500 accent-blue-600">
+                <span>${src.label}</span>
+            </label>
+        `;
+    }).join('');
+
+    updateSourceMultiSelectLabel();
+}
+
+function onSourceCheckboxChange() {
+    const container = document.getElementById('listSourceMultiSelect');
+    const checkedEls = container ? container.querySelectorAll('input[type="checkbox"]:checked') : [];
+    const checkedVals = Array.from(checkedEls).map(el => el.value);
+
+    if (checkedVals.length === 0) {
+        scannerState.selectedSources = ['__NONE__'];
+    } else if (checkedVals.length === ALL_DATA_SOURCES.length) {
+        scannerState.selectedSources = [];
+    } else {
+        scannerState.selectedSources = checkedVals;
+    }
+
+    updateSourceMultiSelectLabel();
+    renderMarketScanner();
+}
+
+function updateSourceMultiSelectLabel() {
+    const label = document.getElementById('labelSourceMultiSelect');
+    if (!label) return;
+    const count = scannerState.selectedSources.length;
+
+    if (count === 0 || scannerState.selectedSources.length === ALL_DATA_SOURCES.length) {
+        label.textContent = 'All Sources';
+    } else if (scannerState.selectedSources.includes('__NONE__')) {
+        label.textContent = '0 Sources';
+    } else if (count === 1) {
+        const found = ALL_DATA_SOURCES.find(s => s.id === scannerState.selectedSources[0]);
+        label.textContent = found ? found.label : scannerState.selectedSources[0];
+    } else {
+        label.textContent = `${count} Sources`;
+    }
+}
+
+function selectAllSources(e) {
+    if (e) e.stopPropagation();
+    scannerState.selectedSources = [];
+    renderSourceMultiSelectList();
+    renderMarketScanner();
+}
+
+function clearAllSources(e) {
+    if (e) e.stopPropagation();
+    scannerState.selectedSources = ['__NONE__'];
+    renderSourceMultiSelectList();
+    renderMarketScanner();
 }
 
 function onScannerFilterChange() {
     const searchEl = document.getElementById('scannerSearchInput');
-    const catEl = document.getElementById('scannerCategoryFilter');
-    const srcEl = document.getElementById('scannerSourceFilter');
     const clearBtn = document.getElementById('btnClearScannerSearch');
 
     if (searchEl) scannerState.search = searchEl.value.trim().toLowerCase();
-    if (catEl) scannerState.category = catEl.value;
-    if (srcEl) scannerState.source = srcEl.value;
 
     if (clearBtn) {
         if (scannerState.search.length > 0) clearBtn.classList.remove('hidden');
@@ -1408,24 +1589,22 @@ function handleScannerHeaderClick(column) {
 function resetScannerFilters() {
     scannerState = {
         search: '',
-        category: 'all',
-        source: 'all',
+        selectedCategories: [],
+        selectedSources: [],
         sortBy: 'default',
         sortDir: 'desc'
     };
 
     const searchEl = document.getElementById('scannerSearchInput');
-    const catEl = document.getElementById('scannerCategoryFilter');
-    const srcEl = document.getElementById('scannerSourceFilter');
     const sortEl = document.getElementById('scannerSortBy');
     const clearBtn = document.getElementById('btnClearScannerSearch');
 
     if (searchEl) searchEl.value = '';
-    if (catEl) catEl.value = 'all';
-    if (srcEl) srcEl.value = 'all';
     if (sortEl) sortEl.value = 'default';
     if (clearBtn) clearBtn.classList.add('hidden');
 
+    renderCategoryMultiSelectList();
+    renderSourceMultiSelectList();
     updateScannerSortDirUI();
     renderMarketScanner();
 }
@@ -1433,7 +1612,7 @@ function resetScannerFilters() {
 function renderMarketScanner() {
     const c = document.getElementById('marketScannerContainer');
     if (!c) return;
-    initScannerCategoryOptions();
+    initMultiSelectUI();
 
     // Update sort arrows on table header
     ['name', 'yield', 'source', 'updated'].forEach(hdr => {
@@ -1503,11 +1682,13 @@ function renderMarketScanner() {
             }
         }
 
-        if (scannerState.category !== 'all' && item.catName !== scannerState.category) {
+        // Category multi-select filter
+        if (scannerState.selectedCategories.length > 0 && !scannerState.selectedCategories.includes(item.catName)) {
             return false;
         }
 
-        if (scannerState.source !== 'all' && item.source !== scannerState.source) {
+        // Source multi-select filter
+        if (scannerState.selectedSources.length > 0 && !scannerState.selectedSources.includes(item.source)) {
             return false;
         }
 
