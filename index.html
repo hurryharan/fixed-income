@@ -206,6 +206,39 @@
                     <button id="prof-yield"    onclick="setProfile('yield')"    class="border py-2.5 rounded-lg text-center text-xs font-mono transition-all font-bold border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-950 text-slate-500 dark:text-slate-400">Yield Maxima</button>
                 </div>
             </div>
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">Risk Avoidance &amp; Constraint Preferences</label>
+                <div class="grid grid-cols-2 gap-2 text-xs font-mono">
+                    <label class="flex items-center gap-2 p-2.5 bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg cursor-pointer hover:border-blue-400 transition-colors select-none">
+                        <input type="checkbox" id="riskAvoidDuration" onchange="saveRiskAvoidanceFromUI()" class="accent-blue-600 rounded w-4 h-4">
+                        <div>
+                            <span class="font-bold text-slate-700 dark:text-slate-300 block">Avoid Duration (>3Y)</span>
+                            <span class="text-[10px] text-slate-400 block">Excludes intermediate &amp; long bonds</span>
+                        </div>
+                    </label>
+                    <label class="flex items-center gap-2 p-2.5 bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg cursor-pointer hover:border-blue-400 transition-colors select-none">
+                        <input type="checkbox" id="riskAvoidCredit" onchange="saveRiskAvoidanceFromUI()" class="accent-blue-600 rounded w-4 h-4">
+                        <div>
+                            <span class="font-bold text-slate-700 dark:text-slate-300 block">Avoid Credit / High Yield</span>
+                            <span class="text-[10px] text-slate-400 block">Excludes junk, BDCs, CLOs &amp; loans</span>
+                        </div>
+                    </label>
+                    <label class="flex items-center gap-2 p-2.5 bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg cursor-pointer hover:border-blue-400 transition-colors select-none">
+                        <input type="checkbox" id="riskAvoidIlliquid" onchange="saveRiskAvoidanceFromUI()" class="accent-blue-600 rounded w-4 h-4">
+                        <div>
+                            <span class="font-bold text-slate-700 dark:text-slate-300 block">Avoid Illiquid / Fixed Term</span>
+                            <span class="text-[10px] text-slate-400 block">Excludes HTM notes, CDs &amp; annuities</span>
+                        </div>
+                    </label>
+                    <label class="flex items-center gap-2 p-2.5 bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg cursor-pointer hover:border-blue-400 transition-colors select-none">
+                        <input type="checkbox" id="riskAvoidForeign" onchange="saveRiskAvoidanceFromUI()" class="accent-blue-600 rounded w-4 h-4">
+                        <div>
+                            <span class="font-bold text-slate-700 dark:text-slate-300 block">Avoid Foreign / EM</span>
+                            <span class="text-[10px] text-slate-400 block">Excludes non-US &amp; emerging markets</span>
+                        </div>
+                    </label>
+                </div>
+            </div>
             <div class="pt-4 mt-2 border-t border-slate-200 dark:border-slate-800 flex justify-end">
                 <button id="btnSaveSettings" onclick="saveSettingsUI()" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-mono text-xs font-bold rounded-lg transition-all shadow-sm flex items-center gap-2">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg>
@@ -314,6 +347,24 @@
                             <div id="listSourceMultiSelect" class="space-y-0.5"></div>
                         </div>
                     </div>
+
+                    <!-- Risk Multi-Select Dropdown -->
+                    <div id="containerRiskMultiSelect" class="relative min-w-[140px]">
+                        <button id="btnRiskMultiSelect" type="button" onclick="toggleMultiSelectDropdown('risk', event)" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 dark:text-slate-300 focus:outline-none focus:border-blue-500 flex items-center justify-between gap-2 font-mono">
+                            <span id="labelRiskMultiSelect" class="truncate">All Risk Profiles</span>
+                            <svg class="w-3 h-3 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </button>
+                        <div id="panelRiskMultiSelect" class="hidden absolute left-0 top-full mt-1 w-56 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-xl p-2 z-30 space-y-1 font-mono text-xs">
+                            <div class="flex items-center justify-between px-2 py-1 border-b border-slate-100 dark:border-slate-800 text-[10px] text-slate-400 font-bold uppercase">
+                                <span>Risk Filter</span>
+                                <div class="flex gap-2">
+                                    <button type="button" onclick="selectAllRisks(event)" class="text-blue-500 hover:underline">All</button>
+                                    <button type="button" onclick="clearAllRisks(event)" class="text-amber-500 hover:underline">Clear</button>
+                                </div>
+                            </div>
+                            <div id="listRiskMultiSelect" class="space-y-0.5"></div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="flex items-center gap-2">
@@ -357,7 +408,7 @@
                         <span id="hdrSort-updated" class="text-blue-500 font-bold"></span>
                     </div>
                 </div>
-                <div id="marketScannerContainer" class="divide-y divide-slate-100 dark:divide-slate-800/60 max-h-96 overflow-y-auto custom-scrollbar">
+                <div id="marketScannerContainer" class="divide-y divide-slate-100 dark:divide-slate-800/60 max-h-[calc(100vh-16rem)] min-h-[500px] overflow-y-auto custom-scrollbar">
                     <!-- Scanner rows populated via JS -->
                 </div>
             </div>
@@ -616,6 +667,43 @@ const STRUCTURAL_CATEGORIES = {
 };
 
 // ═══════════════════════════════════════════════════════════════════
+// ASSET RISK MAP & CONSTRAINTS
+// ═══════════════════════════════════════════════════════════════════
+const ASSET_RISK_MAP = {
+    "hysa": [], "vmfxx": [], "vusxx": [], "swvxx": [], "snvxx": [], "spaxx": [],
+    "brokered_cd": ["illiquid"],
+    "gift_city_fd": ["illiquid", "foreign"],
+    "t_bills_short": [],
+    "t_bills_long": ["illiquid"],
+    "note_2y": ["illiquid"],
+    "note_5y": ["duration", "illiquid"],
+    "note_10y": ["duration", "illiquid"],
+    "bond_30y": ["duration", "illiquid"],
+    "tokenized_tb": ["illiquid"],
+    "usfr": [], "sgov": [], "bil": [], "shv": [],
+    "scho": [], "vgsh": [], "shy": [],
+    "vgit": ["duration"], "ief": ["duration"], "tlt": ["duration"], "vtg": ["duration"],
+    "vwalx": ["duration", "credit"],
+    "vteb": ["duration"], "mub": ["duration"],
+    "jpst": [], "icsh": [], "vcsh": [], "igsb": [], "spsb": [], "bsv": [],
+    "vcit": ["duration"], "lqd": ["duration"], "vtc": ["duration"],
+    "jbbb": ["credit"], "bkln": ["credit"], "shyg": ["credit"], "hyg": ["duration", "credit"],
+    "mbb": ["duration"], "bnd": ["duration"], "agg": ["duration"], "schz": ["duration"],
+    "vwob": ["duration", "credit", "foreign"],
+    "emb": ["duration", "credit", "foreign"],
+    "bndx": ["duration", "foreign"],
+    "bwx": ["duration", "foreign"],
+    "wip": ["duration", "foreign"],
+    "vtip": [], "tip": ["duration"], "schp": ["duration"],
+    "flot": [], "flrn": [],
+    "pff": ["duration", "credit"],
+    "fixed_annuity": ["duration", "illiquid"],
+    "yieldstreet": ["credit", "illiquid"],
+    "arcc": ["credit"], "main": ["credit"],
+    "dst_re": ["duration", "illiquid"]
+};
+
+// ═══════════════════════════════════════════════════════════════════
 // STATE
 // ═══════════════════════════════════════════════════════════════════
 let activeAppPage = 'matrix';
@@ -625,6 +713,12 @@ let manualWeights = {};
 let liveAuctionSignals = {};
 let accordionOpenState = {};
 let marketRateUpdates = {}; // { key: timestamp_string }
+let riskAvoidancePreferences = {
+    duration: false,
+    credit: false,
+    illiquid: false,
+    foreign: false
+};
 
 // ═══════════════════════════════════════════════════════════════════
 // INIT
@@ -812,7 +906,34 @@ function executeAttributionMatrix() {
                 autoWeights['hyg']   += remainderWeight * 0.15;
                 autoWeights['main']  += remainderWeight * 0.15;
                 autoWeights['pff']   += remainderWeight * 0.15;
-                logs.push(`[ALLOC] US Yield Maxima: ARCC 22%, BKLN 18%, JBBB 15%, HYG 15%, MAIN 15%, PFF 15%`);
+            }
+        }
+
+        // ── Enforce Risk Avoidance Constraints ───────────────────────
+        let constrainedZeroCount = 0;
+        Object.keys(ASSETS_MANIFEST).forEach(k => {
+            if (manualWeights[k] !== undefined) return;
+            const itemRisks = ASSET_RISK_MAP[k] || [];
+            const activeViolations = itemRisks.filter(r => riskAvoidancePreferences[r]);
+            if (activeViolations.length > 0 && autoWeights[k] > 0) {
+                logs.push(`[RISK-CONSTRAINT] Excluded ${ASSETS_MANIFEST[k].name} due to active risk preference: ${activeViolations.join(', ').toUpperCase()}`);
+                autoWeights[k] = 0;
+                constrainedZeroCount++;
+            }
+        });
+
+        if (constrainedZeroCount > 0) {
+            const sumRemaining = Object.keys(ASSETS_MANIFEST).reduce((s, k) => s + (manualWeights[k] === undefined ? autoWeights[k] : 0), 0);
+            if (sumRemaining > 0 && sumRemaining < remainderWeight) {
+                const scale = remainderWeight / sumRemaining;
+                Object.keys(ASSETS_MANIFEST).forEach(k => {
+                    if (manualWeights[k] === undefined && autoWeights[k] > 0) {
+                        autoWeights[k] *= scale;
+                    }
+                });
+            } else if (sumRemaining === 0) {
+                autoWeights[sweepAsset] += remainderWeight;
+                logs.push(`[RISK-CONSTRAINT] All candidate assets excluded by risk filters. Reallocated remainder weight to ${ASSETS_MANIFEST[sweepAsset].name}`);
             }
         }
     }
@@ -946,6 +1067,19 @@ function buildForensicLogic(key, weights, autoWeights, manualWeights, jurisdicti
     }
 
     // ── Rejected assets — specific reasons ───────────────────────
+    const itemRisks = ASSET_RISK_MAP[key] || [];
+    const activeViolations = itemRisks.filter(r => riskAvoidancePreferences[r]);
+    if (activeViolations.length > 0 && !isManual && w === 0) {
+        const riskLabels = activeViolations.map(r => {
+            if (r === 'duration') return 'Duration Risk (>3Y)';
+            if (r === 'credit') return 'Credit / High Yield Risk';
+            if (r === 'illiquid') return 'Illiquidity Risk';
+            if (r === 'foreign') return 'Foreign / EM Risk';
+            return r;
+        });
+        return { status:'rejected', label:'Risk Filtered', reason:`Excluded by active Risk Avoidance preferences: ${riskLabels.join(', ')}. Zero-weighted by allocation engine.`, color:'rose' };
+    }
+
     let reason = '';
     switch (key) {
         case 'hysa':        reason = `Not explicitly allocated — HYSA balances exist outside the brokerage allocation model and are tracked separately. The sweep assets (SPAXX/VUSXX) cover the brokerage liquidity floor within this portfolio.`; break;
@@ -1443,6 +1577,7 @@ let scannerState = {
     search: '',
     selectedCategories: [], // Empty = All categories selected
     selectedSources: [],    // Empty = All sources selected
+    selectedRisks: [],      // Empty = All risk profiles (no filter)
     sortBy: 'default',
     sortDir: 'desc'
 };
@@ -1452,6 +1587,14 @@ const ALL_DATA_SOURCES = [
     { id: 'live', label: 'Live Market' },
     { id: 'manual', label: 'User Tweak' },
     { id: 'hardcoded', label: 'Hardcoded (AI)' }
+];
+
+const ALL_RISK_TAGS = [
+    { id: 'none',     label: 'No Risk Tags (Safe)',       badge: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800' },
+    { id: 'duration', label: 'Duration Risk (>3Y)',       badge: 'bg-orange-100 text-orange-700 dark:bg-orange-900/50 dark:text-orange-400 border-orange-200 dark:border-orange-800' },
+    { id: 'credit',   label: 'Credit / High Yield',       badge: 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-400 border-red-200 dark:border-red-800' },
+    { id: 'illiquid', label: 'Illiquid / Fixed Term',     badge: 'bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-400 border-purple-200 dark:border-purple-800' },
+    { id: 'foreign',  label: 'Foreign / EM Exposure',     badge: 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-400 border-blue-200 dark:border-blue-800' },
 ];
 
 let multiSelectInitialized = false;
@@ -1466,28 +1609,91 @@ function initMultiSelectUI() {
     document.addEventListener('click', (e) => {
         const catContainer = document.getElementById('containerCatMultiSelect');
         const srcContainer = document.getElementById('containerSourceMultiSelect');
+        const riskContainer = document.getElementById('containerRiskMultiSelect');
         if (catContainer && !catContainer.contains(e.target)) {
             document.getElementById('panelCatMultiSelect')?.classList.add('hidden');
         }
         if (srcContainer && !srcContainer.contains(e.target)) {
             document.getElementById('panelSourceMultiSelect')?.classList.add('hidden');
         }
+        if (riskContainer && !riskContainer.contains(e.target)) {
+            document.getElementById('panelRiskMultiSelect')?.classList.add('hidden');
+        }
     });
+    renderRiskMultiSelectList();
 }
 
 function toggleMultiSelectDropdown(type, e) {
     if (e) e.stopPropagation();
-    if (type === 'cat') {
-        const panel = document.getElementById('panelCatMultiSelect');
-        const other = document.getElementById('panelSourceMultiSelect');
-        if (other) other.classList.add('hidden');
-        if (panel) panel.classList.toggle('hidden');
-    } else if (type === 'source') {
-        const panel = document.getElementById('panelSourceMultiSelect');
-        const other = document.getElementById('panelCatMultiSelect');
-        if (other) other.classList.add('hidden');
-        if (panel) panel.classList.toggle('hidden');
+    const panels = {
+        cat:    document.getElementById('panelCatMultiSelect'),
+        source: document.getElementById('panelSourceMultiSelect'),
+        risk:   document.getElementById('panelRiskMultiSelect'),
+    };
+    Object.keys(panels).forEach(k => {
+        if (k !== type && panels[k]) panels[k].classList.add('hidden');
+    });
+    if (panels[type]) panels[type].classList.toggle('hidden');
+}
+
+function renderRiskMultiSelectList() {
+    const container = document.getElementById('listRiskMultiSelect');
+    if (!container) return;
+    container.innerHTML = ALL_RISK_TAGS.map(tag => {
+        const isChecked = scannerState.selectedRisks.length === 0 || scannerState.selectedRisks.includes(tag.id);
+        return `
+            <label class="flex items-center gap-2 px-2 py-1 hover:bg-slate-100 dark:hover:bg-slate-800/80 rounded cursor-pointer text-[11px] text-slate-700 dark:text-slate-300">
+                <input type="checkbox" value="${tag.id}" ${isChecked ? 'checked' : ''} onchange="onRiskCheckboxChange()" class="rounded border-slate-300 dark:border-slate-700 text-blue-600 focus:ring-blue-500 accent-blue-600">
+                <span class="px-1.5 py-0.5 rounded text-[9px] font-bold border ${tag.badge}">${tag.label}</span>
+            </label>
+        `;
+    }).join('');
+    updateRiskMultiSelectLabel();
+}
+
+function onRiskCheckboxChange() {
+    const container = document.getElementById('listRiskMultiSelect');
+    const checkedEls = container ? container.querySelectorAll('input[type="checkbox"]:checked') : [];
+    const checkedVals = Array.from(checkedEls).map(el => el.value);
+    if (checkedVals.length === 0) {
+        scannerState.selectedRisks = ['__NONE__'];
+    } else if (checkedVals.length === ALL_RISK_TAGS.length) {
+        scannerState.selectedRisks = [];
+    } else {
+        scannerState.selectedRisks = checkedVals;
     }
+    updateRiskMultiSelectLabel();
+    renderMarketScanner();
+}
+
+function updateRiskMultiSelectLabel() {
+    const label = document.getElementById('labelRiskMultiSelect');
+    if (!label) return;
+    const count = scannerState.selectedRisks.length;
+    if (count === 0 || count === ALL_RISK_TAGS.length) {
+        label.textContent = 'All Risk Profiles';
+    } else if (scannerState.selectedRisks.includes('__NONE__')) {
+        label.textContent = '0 Risk Profiles';
+    } else if (count === 1) {
+        const found = ALL_RISK_TAGS.find(t => t.id === scannerState.selectedRisks[0]);
+        label.textContent = found ? found.label : scannerState.selectedRisks[0];
+    } else {
+        label.textContent = `${count} Risk Filters`;
+    }
+}
+
+function selectAllRisks(e) {
+    if (e) e.stopPropagation();
+    scannerState.selectedRisks = [];
+    renderRiskMultiSelectList();
+    renderMarketScanner();
+}
+
+function clearAllRisks(e) {
+    if (e) e.stopPropagation();
+    scannerState.selectedRisks = ['__NONE__'];
+    renderRiskMultiSelectList();
+    renderMarketScanner();
 }
 
 function renderCategoryMultiSelectList() {
@@ -1690,6 +1896,7 @@ function resetScannerFilters() {
         search: '',
         selectedCategories: [],
         selectedSources: [],
+        selectedRisks: [],
         sortBy: 'default',
         sortDir: 'desc'
     };
@@ -1704,6 +1911,7 @@ function resetScannerFilters() {
 
     renderCategoryMultiSelectList();
     renderSourceMultiSelectList();
+    renderRiskMultiSelectList();
     updateScannerSortDirUI();
     renderMarketScanner();
 }
@@ -1749,6 +1957,7 @@ function renderMarketScanner() {
             }
             
             const lastUpd = (ys.source === 'hardcoded' || ys.source === 'manual') ? 'Static' : (marketRateUpdates[key] || (ys.source === 'auction' ? liveAuctionSignals[key].auctionDate : 'Static'));
+            const itemRisks = ASSET_RISK_MAP[key] || [];
 
             allItems.push({
                 key,
@@ -1760,6 +1969,7 @@ function renderMarketScanner() {
                 sourceLabel,
                 sourceBadge,
                 lastUpd,
+                risks: itemRisks,
                 defaultOrder: catIdx * 1000 + keyIdx
             });
         });
@@ -1789,6 +1999,14 @@ function renderMarketScanner() {
         // Source multi-select filter
         if (scannerState.selectedSources.length > 0 && !scannerState.selectedSources.includes(item.source)) {
             return false;
+        }
+
+        // Risk multi-select filter
+        if (scannerState.selectedRisks.length > 0) {
+            if (scannerState.selectedRisks.includes('__NONE__')) return false;
+            const itemRiskSet = item.risks.length === 0 ? ['none'] : item.risks;
+            const hasMatch = scannerState.selectedRisks.some(r => itemRiskSet.includes(r));
+            if (!hasMatch) return false;
         }
 
         return true;
@@ -1842,17 +2060,29 @@ function renderMarketScanner() {
         return;
     }
 
+    const RISK_BADGE_STYLES = {
+        duration: 'bg-orange-100 text-orange-700 dark:bg-orange-900/50 dark:text-orange-400 border-orange-200 dark:border-orange-800',
+        credit:   'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-400 border-red-200 dark:border-red-800',
+        illiquid: 'bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-400 border-purple-200 dark:border-purple-800',
+        foreign:  'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-400 border-blue-200 dark:border-blue-800',
+    };
+    const RISK_LABELS = { duration: 'DURATION', credit: 'CREDIT', illiquid: 'ILLIQUID', foreign: 'FOREIGN' };
+
     filtered.forEach(item => {
         const div = document.createElement('div');
-        div.className = 'grid grid-cols-5 px-6 py-3 items-center hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors text-sm';
+        div.className = 'grid grid-cols-5 px-6 py-3 items-start hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors text-sm';
+        const riskBadgesHtml = item.risks.length === 0
+            ? '<span class="text-[8px] px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-400 font-bold border border-emerald-200 dark:border-emerald-800">SAFE</span>'
+            : item.risks.map(r => `<span class="text-[8px] px-1.5 py-0.5 rounded font-bold border ${RISK_BADGE_STYLES[r] || ''}">${RISK_LABELS[r] || r.toUpperCase()}</span>`).join('');
         div.innerHTML = `
             <div class="col-span-2">
                 <div class="font-bold text-[11px] text-slate-800 dark:text-slate-200">${item.name}</div>
                 <div class="text-[9px] text-slate-400 font-mono mt-0.5">${item.catName}</div>
+                <div class="flex flex-wrap gap-1 mt-1">${riskBadgesHtml}</div>
             </div>
-            <div class="text-right font-mono font-bold text-slate-900 dark:text-white">${item.yield.toFixed(2)}%</div>
-            <div class="text-center flex justify-center">${item.sourceBadge}</div>
-            <div class="text-right text-[10px] text-slate-500 font-mono">${item.lastUpd}</div>
+            <div class="text-right font-mono font-bold text-slate-900 dark:text-white pt-1">${item.yield.toFixed(2)}%</div>
+            <div class="text-center flex justify-center pt-1">${item.sourceBadge}</div>
+            <div class="text-right text-[10px] text-slate-500 font-mono pt-1">${item.lastUpd}</div>
         `;
         c.appendChild(div);
     });
@@ -2338,6 +2568,15 @@ function closeForensicModal(){
     modal.classList.add('hidden');modal.classList.remove('flex');
 }
 
+function saveRiskAvoidanceFromUI() {
+    riskAvoidancePreferences.duration = document.getElementById('riskAvoidDuration')?.checked || false;
+    riskAvoidancePreferences.credit   = document.getElementById('riskAvoidCredit')?.checked   || false;
+    riskAvoidancePreferences.illiquid = document.getElementById('riskAvoidIlliquid')?.checked || false;
+    riskAvoidancePreferences.foreign  = document.getElementById('riskAvoidForeign')?.checked  || false;
+    saveEngineCache();
+    executeAttributionMatrix();
+}
+
 function saveEngineCache(){
     localStorage.setItem('fx_cache_saved','true');
     localStorage.setItem('fx_capital_val',document.getElementById('capital').value);
@@ -2351,6 +2590,7 @@ function saveEngineCache(){
     localStorage.setItem('fx_base_yields',JSON.stringify(baseYields));
     localStorage.setItem('fx_manual_weights',JSON.stringify(manualWeights));
     localStorage.setItem('fx_market_updates',JSON.stringify(marketRateUpdates));
+    localStorage.setItem('fx_risk_avoidance',JSON.stringify(riskAvoidancePreferences));
 }
 function loadEngineCache(){
     if(localStorage.getItem('fx_cache_saved')==='true'){
@@ -2372,12 +2612,27 @@ function loadEngineCache(){
         activeAppPage=localStorage.getItem('fx_page_val')||'matrix';
         try{baseYields={...BASE_YIELDS_DEFAULT,...(JSON.parse(localStorage.getItem('fx_base_yields'))||{})};manualWeights=JSON.parse(localStorage.getItem('fx_manual_weights'))||{};marketRateUpdates=JSON.parse(localStorage.getItem('fx_market_updates'))||{};}
         catch(e){baseYields={...BASE_YIELDS_DEFAULT};manualWeights={};marketRateUpdates={};}
+
+        // Restore risk avoidance preferences
+        try {
+            const saved = JSON.parse(localStorage.getItem('fx_risk_avoidance') || '{}');
+            riskAvoidancePreferences = { duration: false, credit: false, illiquid: false, foreign: false, ...saved };
+        } catch(e) {
+            riskAvoidancePreferences = { duration: false, credit: false, illiquid: false, foreign: false };
+        }
     } else {
         updateTaxFields();
     }
     document.getElementById('horizonVal').innerText=`${document.getElementById('horizon').value} Months`;
     document.getElementById('liquidityVal').innerText=`${document.getElementById('liquidityTarget').value}%`;
     setProfile(activeProfile);
+
+    // Restore risk avoidance checkboxes after DOM is ready
+    const riskFields = ['duration', 'credit', 'illiquid', 'foreign'];
+    riskFields.forEach(r => {
+        const el = document.getElementById(`riskAvoid${r.charAt(0).toUpperCase() + r.slice(1)}`);
+        if (el) el.checked = riskAvoidancePreferences[r] || false;
+    });
 }
 function resetGlobalDefaults(){const t=localStorage.getItem('fx_theme');localStorage.clear();if(t)localStorage.setItem('fx_theme',t);location.reload();}
 
