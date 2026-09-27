@@ -255,11 +255,10 @@
         </div>
 
         <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-sm overflow-hidden">
-            <div class="px-6 py-4 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center flex-wrap gap-3">
+            <div class="px-6 py-4 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
                 <div>
                     <h3 class="text-sm font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 font-mono flex items-center gap-2">
                         Global Market Rates Scanner
-                        <span id="scannerCountBadge" class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-bold border border-slate-300 dark:border-slate-700"></span>
                     </h3>
                     <p class="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">Latest yields and pricing info for all tracked assets</p>
                 </div>
@@ -268,72 +267,12 @@
                     Scan Latest Rates
                 </button>
             </div>
-
-            <!-- Scanner Controls Bar (Filter & Sort) -->
-            <div class="px-6 py-3 bg-slate-100/60 dark:bg-slate-950/60 border-b border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs font-mono">
-                <div class="flex flex-wrap items-center gap-3 flex-1 min-w-[280px]">
-                    <!-- Search Input -->
-                    <div class="relative flex-1 min-w-[180px]">
-                        <svg class="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                        <input type="text" id="scannerSearchInput" oninput="onScannerFilterChange()" placeholder="Search assets, tickers, keywords..." class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg pl-8 pr-7 py-1.5 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-blue-500 placeholder-slate-400 dark:placeholder-slate-500">
-                        <button id="btnClearScannerSearch" onclick="clearScannerSearch()" class="hidden absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs font-bold px-1">&times;</button>
-                    </div>
-
-                    <!-- Category Filter Dropdown -->
-                    <select id="scannerCategoryFilter" onchange="onScannerFilterChange()" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 dark:text-slate-300 focus:outline-none focus:border-blue-500 max-w-[200px]">
-                        <option value="all">All Categories</option>
-                    </select>
-
-                    <!-- Data Source Filter Dropdown -->
-                    <select id="scannerSourceFilter" onchange="onScannerFilterChange()" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 dark:text-slate-300 focus:outline-none focus:border-blue-500">
-                        <option value="all">All Sources</option>
-                        <option value="auction">Treasury API</option>
-                        <option value="live">Live Market</option>
-                        <option value="manual">User Tweak</option>
-                        <option value="hardcoded">Hardcoded (AI)</option>
-                    </select>
-                </div>
-
-                <div class="flex items-center gap-2">
-                    <!-- Sort By Dropdown -->
-                    <div class="flex items-center gap-1.5">
-                        <span class="text-[10px] uppercase font-bold text-slate-400">Sort:</span>
-                        <select id="scannerSortBy" onchange="onScannerSortChange(this.value)" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 dark:text-slate-300 focus:outline-none focus:border-blue-500">
-                            <option value="default">Default Category</option>
-                            <option value="yield">Current Rate</option>
-                            <option value="name">Asset Name</option>
-                            <option value="category">Category</option>
-                            <option value="source">Data Source</option>
-                            <option value="updated">Last Updated</option>
-                        </select>
-                        <button id="scannerSortDirBtn" onclick="toggleScannerSortDir()" title="Toggle sort direction" class="p-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center justify-center">
-                            <span id="scannerSortDirLabel" class="text-xs font-bold leading-none">↓</span>
-                        </button>
-                    </div>
-
-                    <!-- Reset Filters Button -->
-                    <button id="btnResetScannerFilters" onclick="resetScannerFilters()" class="text-[10px] font-mono text-amber-600 dark:text-amber-500 border border-amber-200 dark:border-amber-900/40 px-2 py-1.5 rounded hover:bg-amber-50 dark:hover:bg-amber-950/40 transition-all font-bold">Reset</button>
-                </div>
-            </div>
-
             <div class="p-0">
-                <div class="grid grid-cols-5 text-[10px] font-mono font-bold tracking-wider uppercase text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 px-6 py-2 select-none">
-                    <div class="col-span-2 cursor-pointer hover:text-slate-700 dark:hover:text-slate-300 flex items-center gap-1" onclick="handleScannerHeaderClick('name')">
-                        <span>Asset Type / Name</span>
-                        <span id="hdrSort-name" class="text-blue-500 font-bold"></span>
-                    </div>
-                    <div class="text-right cursor-pointer hover:text-slate-700 dark:hover:text-slate-300 flex items-center justify-end gap-1" onclick="handleScannerHeaderClick('yield')">
-                        <span>Current Rate</span>
-                        <span id="hdrSort-yield" class="text-blue-500 font-bold"></span>
-                    </div>
-                    <div class="text-center cursor-pointer hover:text-slate-700 dark:hover:text-slate-300 flex items-center justify-center gap-1" onclick="handleScannerHeaderClick('source')">
-                        <span>Data Source</span>
-                        <span id="hdrSort-source" class="text-blue-500 font-bold"></span>
-                    </div>
-                    <div class="text-right cursor-pointer hover:text-slate-700 dark:hover:text-slate-300 flex items-center justify-end gap-1" onclick="handleScannerHeaderClick('updated')">
-                        <span>Last Updated</span>
-                        <span id="hdrSort-updated" class="text-blue-500 font-bold"></span>
-                    </div>
+                <div class="grid grid-cols-5 text-[10px] font-mono font-bold tracking-wider uppercase text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 px-6 py-2">
+                    <div class="col-span-2">Asset Type / Name</div>
+                    <div class="text-right">Current Rate</div>
+                    <div class="text-center">Data Source</div>
+                    <div class="text-right">Last Updated</div>
                 </div>
                 <div id="marketScannerContainer" class="divide-y divide-slate-100 dark:divide-slate-800/60 max-h-96 overflow-y-auto custom-scrollbar">
                     <!-- Scanner rows populated via JS -->
@@ -396,7 +335,6 @@ const BASE_YIELDS_DEFAULT = {
     "vmfxx":         4.15,
     "vusxx":         4.10,
     "swvxx":         4.05,
-    "snvxx":         4.05,
     "spaxx":         3.80,
     // CDs
     "brokered_cd":   4.65,
@@ -408,15 +346,13 @@ const BASE_YIELDS_DEFAULT = {
     "note_2y":       4.11,
     "note_5y":       4.22,
     "tokenized_tb":  4.12,
-    // Treasury ETFs — Ultra-Short (0-6M duration, near-zero rate risk)
+    // Treasury ETFs
     "sgov":          3.55,
     "bil":           3.49,
     "shv":           3.55,
-    // Treasury ETFs — Short-Term (1-3Y duration, low rate risk)
     "scho":          3.98,
     "vgsh":          4.12,
     "shy":           3.82,
-    // Treasury ETFs — Intermediate-Long (3Y+ duration, meaningful rate risk)
     "vgit":          4.26,
     "ief":           4.30,
     "tlt":           4.85,
@@ -425,22 +361,15 @@ const BASE_YIELDS_DEFAULT = {
     "vwalx":         4.27,
     "vteb":          3.35,
     "mub":           3.38,
-    // Ultra-Short & Short Corporate Bonds
+    // Ultra-Short & Short Corp
     "jpst":          4.80,
-    "icsh":          4.82,
     "vcsh":          4.68,
     "igsb":          5.00,
     "spsb":          4.95,
-    "bsv":           4.55,
     // IG Corporate
     "vcit":          5.16,
     "lqd":           5.22,
     "vtc":           5.40,
-    // High Yield Corporate
-    "hyg":           6.80,
-    "shyg":          6.40,
-    // Mortgage-Backed Securities
-    "mbb":           4.72,
     // Aggregate Bond Funds
     "bnd":           4.50,
     "agg":           4.48,
@@ -481,7 +410,6 @@ const ASSETS_MANIFEST = {
     "vmfxx":       { name:"Vanguard Federal Money Market (VMFXX)",                         cat:"Cash & Cash Equivalents",         scannable:true, duration:0.08,  expense:0.11, tax:"Fully Taxable",         desc:"Settlement sweep holding US government agency obligations.", risk:"Inflation risk. 0.11% ER is manageable but VUSXX is cheaper for taxable sweep." },
     "vusxx":       { name:"Vanguard Treasury Money Market (VUSXX)",                        cat:"Cash & Cash Equivalents",         scannable:true, duration:0.08,  expense:0.09, tax:"State/Local Tax-Free",  desc:"Treasury-only money market with state/local tax exemption on income.", risk:"Slightly lower gross yield vs prime MMFs but wins on net yield in high-bracket states." },
     "swvxx":       { name:"Schwab Value Advantage Money Fund (SWVXX)",                     cat:"Cash & Cash Equivalents",         scannable:true, duration:0.10,  expense:0.34, tax:"Fully Taxable",         desc:"Prime money market investing in high-quality commercial paper.", risk:"Non-government credit exposure adds marginal risk; 0.34% ER erodes yield advantage." },
-    "snvxx":       { name:"Schwab Government Money Fund (SNVXX)",                          cat:"Cash & Cash Equivalents",         scannable:true, duration:0.08,  expense:0.34, tax:"Fully Taxable",         desc:"Schwab's government-only money market fund holding US Treasuries and agency securities. Similar to VMFXX but on the Schwab platform.", risk:"0.34% ER matches SWVXX but lacks the prime credit premium — lower gross yield than SWVXX for the same cost. VUSXX is preferred where state-tax exemption matters." },
     "spaxx":       { name:"Fidelity Government Money Market (SPAXX)",                      cat:"Cash & Cash Equivalents",         scannable:true, duration:0.08,  expense:0.42, tax:"Fully Taxable",         desc:"Default Fidelity brokerage settlement sweep in government money market.", risk:"0.42% ER is the highest in the peer group — materially drag vs VMFXX/VUSXX." },
     // ── Certificates of Deposit ──────────────────────────────────
     "brokered_cd": { name:"Brokered CDs (9–13 Month)",                                    cat:"Certificates of Deposit (CDs)",   scannable:false, duration:0.90,  expense:0.00, tax:"Fully Taxable",         desc:"FDIC-insured brokered CDs purchased at auction via brokerage. Typically callable-free in the 9-13M sweet spot.", risk:"Early sale at secondary market prices may incur a discount. No capital appreciation." },
@@ -493,30 +421,26 @@ const ASSETS_MANIFEST = {
     "note_2y":       { name:"U.S. 2-Year Treasury Note",                                  cat:"U.S. Treasuries — Direct",        scannable:true, duration:1.92,  expense:0.00, tax:"State/Local Tax-Free",  desc:"The primary medium-term sovereign anchor. Zero expense, state-tax exempt, held to maturity eliminates NAV risk.", risk:"Mark-to-market losses if sold before maturity during rate spikes." },
     "note_5y":       { name:"U.S. 5-Year Treasury Note",                                  cat:"U.S. Treasuries — Direct",        scannable:true, duration:4.50,  expense:0.00, tax:"State/Local Tax-Free",  desc:"Intermediate curve anchor capturing the positive slope above the 2Y point.", risk:"Rate sensitivity increases materially. Duration commitment requires a 5Y investment horizon." },
     "tokenized_tb":  { name:"Tokenized T-Bills (Ondo Finance / OUSG)",                    cat:"U.S. Treasuries — Direct",        scannable:false, duration:0.08,  expense:0.15, tax:"State/Local Tax-Free",  desc:"On-chain tokenized short-term Treasury exposure via Ondo Finance's OUSG product. Near-T-bill yield with blockchain settlement.", risk:"Smart contract and regulatory risk layered on top of T-bill credit risk. Nascent product structure." },
-    // ── Treasury ETFs — Ultra-Short (0-6M) ───────────────────────
-    "sgov":  { name:"iShares Ultra-Short Treasury ETF (SGOV)",         cat:"Treasury ETFs — Ultra-Short (0-6M)", scannable:true, duration:0.12,  expense:0.09, tax:"State/Local Tax-Free", desc:"Rolling 0-3 month T-bill pool ETF. Lowest ER in the ultra-short category at 0.09%. Near-zero duration makes it immune to rate moves — functionally a T-bill ladder with intraday liquidity.", risk:"Reinvestment risk during surprise rate cuts. Yield resets with Fed policy shifts. No capital appreciation." },
-    "bil":   { name:"SPDR 1-3 Month T-Bill ETF (BIL)",                 cat:"Treasury ETFs — Ultra-Short (0-6M)", scannable:true, duration:0.15,  expense:0.13, tax:"State/Local Tax-Free", desc:"Tracks 1-3 month T-bill benchmark. Highly liquid with tight spreads. Functionally cash-equivalent.", risk:"0.13% ER is 4bps above SGOV for functionally equivalent exposure. Rate risk is negligible." },
-    "shv":   { name:"iShares Short Treasury Bond ETF (SHV)",            cat:"Treasury ETFs — Ultra-Short (0-6M)", scannable:true, duration:0.40,  expense:0.15, tax:"State/Local Tax-Free", desc:"Covers 1-12 month Treasury instruments with slightly longer average maturity than BIL/SGOV. Bridges the gap between cash and short-term bond ETFs.", risk:"Longest duration in the ultra-short bucket (~0.4Y) — a 100bps rate move causes only ~0.4% NAV change. 0.15% ER is the highest in this group." },
-    // ── Treasury ETFs — Short-Term (1-3Y) ─────────────────────────
-    "scho":  { name:"Schwab Short-Term U.S. Treasury ETF (SCHO)",      cat:"Treasury ETFs — Short-Term (1-3Y)", scannable:true, duration:1.85,  expense:0.03, tax:"State/Local Tax-Free", desc:"1-3 year Treasury ETF at the lowest-in-class 0.03% ER. Low duration creates modest sensitivity to rate moves (~1.85% NAV change per 100bps move).", risk:"Duration extends beyond T-bills, creating meaningful NAV sensitivity in sharp rate moves. Not cash-equivalent." },
-    "vgsh":  { name:"Vanguard Short-Term Treasury ETF (VGSH)",          cat:"Treasury ETFs — Short-Term (1-3Y)", scannable:true, duration:1.86,  expense:0.04, tax:"State/Local Tax-Free", desc:"Vanguard's 1-3 year Treasury ladder ETF at 0.04% ER. Very similar to SCHO with marginally different index coverage.", risk:"Near-identical to SCHO; 1bp ER disadvantage. A 100bps rate move implies ~1.86% NAV loss for intermediate-term holders." },
-    "shy":   { name:"iShares 1-3 Year Treasury Bond ETF (SHY)",         cat:"Treasury ETFs — Short-Term (1-3Y)", scannable:true, duration:1.84,  expense:0.15, tax:"State/Local Tax-Free", desc:"The benchmark 1-3 year Treasury ETF with the deepest liquidity pool. Widely used as an institutional short-duration anchor.", risk:"0.15% ER is dominated by SCHO (0.03%) and VGSH (0.04%) for the same 1-3Y exposure — 12bps annual cost penalty." },
-    // ── Treasury ETFs — Intermediate-Long (3Y+) ───────────────────
-    "vgit":  { name:"Vanguard Intermediate-Term Treasury ETF (VGIT)",   cat:"Treasury ETFs — Intermediate-Long (3Y+)", scannable:true, duration:5.00,  expense:0.04, tax:"State/Local Tax-Free", desc:"3-10 year Treasury exposure capturing the intermediate curve at 0.04% ER. A 100bps rate move causes ~5% NAV change — meaningful duration risk requiring a multi-year holding horizon.", risk:"Moderate-to-high duration (5Y). Suitable for investors with 3-5Y+ horizons who want sovereign credit quality but accept rate volatility." },
-    "ief":   { name:"iShares 7-10 Year Treasury Bond ETF (IEF)",        cat:"Treasury ETFs — Intermediate-Long (3Y+)", scannable:true, duration:7.50,  expense:0.15, tax:"State/Local Tax-Free", desc:"Intermediate-long Treasury benchmark ETF covering the 7-10 year maturity range. Significant rate sensitivity — a 100bps move implies ~7.5% NAV change.", risk:"0.15% ER vs VGIT's 0.04% for similar duration tier — 11bps annual ER penalty. High duration requires long-term commitment." },
-    "tlt":   { name:"iShares 20+ Year Treasury Bond ETF (TLT)",         cat:"Treasury ETFs — Intermediate-Long (3Y+)", scannable:true, duration:16.40, expense:0.15, tax:"State/Local Tax-Free", desc:"Long-duration pure play capturing macro rate trends at the extreme end of the curve. A 100bps rate move implies ~16% NAV change — maximum duration in the sovereign space.", risk:"Extreme convexity and duration risk. Appropriate only for investors who explicitly want long-duration rate exposure, e.g., as a macro hedge or deflation bet. Not for capital preservation." },
-    "vtg":   { name:"Vanguard Total Treasury ETF (VTG)",                cat:"Treasury ETFs — Intermediate-Long (3Y+)", scannable:true, duration:5.80,  expense:0.03, tax:"State/Local Tax-Free", desc:"Blended Treasury index covering short, intermediate, and long maturities at 0.03% ER. Lowest-cost Treasury exposure in the universe. Effective duration ~5.8Y.", risk:"Curve exposure is undifferentiated — mixed maturity prevents precision duration targeting. The blended duration of ~5.8Y means meaningful rate sensitivity without the ability to isolate short or long curve positioning." },
+    // ── Treasury ETFs ─────────────────────────────────────────────
+    "sgov":  { name:"iShares Ultra-Short Treasury ETF (SGOV)",       cat:"Treasury ETFs", scannable:true, duration:0.12,  expense:0.09, tax:"State/Local Tax-Free", desc:"Rolling 0-3 month T-bill pool ETF. Lowest ER in the ultra-short category at 0.09%.", risk:"Reinvestment friction during surprise rate cuts." },
+    "bil":   { name:"SPDR 1-3 Month T-Bill ETF (BIL)",               cat:"Treasury ETFs", scannable:true, duration:0.15,  expense:0.13, tax:"State/Local Tax-Free", desc:"Tracks 1-3 month T-bill benchmark. Highly liquid with tight spreads.", risk:"0.13% ER is 4bps above SGOV for functionally equivalent exposure." },
+    "shv":   { name:"iShares Short Treasury Bond ETF (SHV)",          cat:"Treasury ETFs", scannable:true, duration:0.40,  expense:0.15, tax:"State/Local Tax-Free", desc:"Covers 1-12 month Treasury instruments, bridging cash and bill categories.", risk:"0.15% ER — most expensive in the short-Treasury ETF group." },
+    "scho":  { name:"Schwab Short-Term U.S. Treasury ETF (SCHO)",     cat:"Treasury ETFs", scannable:true, duration:1.85,  expense:0.03, tax:"State/Local Tax-Free", desc:"1-3 year Treasury ETF at the lowest-in-class 0.03% ER.", risk:"Modest duration extends beyond T-bills, creating NAV sensitivity to rate moves." },
+    "vgsh":  { name:"Vanguard Short-Term Treasury ETF (VGSH)",        cat:"Treasury ETFs", scannable:true, duration:1.86,  expense:0.04, tax:"State/Local Tax-Free", desc:"Vanguard's 1-3 year Treasury ladder ETF at 0.04% ER.", risk:"Nearly identical to SCHO; 1bp ER disadvantage but slightly broader index coverage." },
+    "shy":   { name:"iShares 1-3 Year Treasury Bond ETF (SHY)",       cat:"Treasury ETFs", scannable:true, duration:1.84,  expense:0.15, tax:"State/Local Tax-Free", desc:"The benchmark 1-3 year Treasury ETF with deep liquidity.", risk:"0.15% ER is dominated by SCHO (0.03%) for the same exposure." },
+    "vgit":  { name:"Vanguard Intermediate-Term Treasury ETF (VGIT)",  cat:"Treasury ETFs", scannable:true, duration:5.00,  expense:0.04, tax:"State/Local Tax-Free", desc:"3-10 year Treasury exposure capturing the intermediate curve at 0.04% ER.", risk:"Moderate duration. Rate sensitivity is meaningful but well below TLT." },
+    "ief":   { name:"iShares 7-10 Year Treasury Bond ETF (IEF)",       cat:"Treasury ETFs", scannable:true, duration:7.50,  expense:0.15, tax:"State/Local Tax-Free", desc:"Intermediate-long Treasury benchmark ETF covering the 7-10 year maturity range.", risk:"0.15% ER vs VGIT's 0.04% for similar duration — ER disadvantage of 11bps." },
+    "tlt":   { name:"iShares 20+ Year Treasury Bond ETF (TLT)",        cat:"Treasury ETFs", scannable:true, duration:16.40, expense:0.15, tax:"State/Local Tax-Free", desc:"Long-duration pure play capturing macro rate trends at the extreme end of the curve.", risk:"Extreme convexity. Each 100bps rate rise implies ~16% NAV loss. Not for capital preservation mandates." },
+    "vtg":   { name:"Vanguard Total Treasury ETF (VTG)",               cat:"Treasury ETFs", scannable:true, duration:5.80,  expense:0.03, tax:"State/Local Tax-Free", desc:"Blended Treasury index covering short, intermediate, and long maturities at 0.03% ER.", risk:"Curve exposure is undifferentiated — mixed maturity prevents precision targeting." },
     // ── Municipal Bonds ───────────────────────────────────────────
     "vwalx": { name:"Vanguard High-Yield Tax-Exempt Admiral (VWALX)",  cat:"Municipal Bonds", scannable:true, duration:6.30, expense:0.09, tax:"Fed Tax-Exempt", desc:"Actively managed high-yield muni bond fund. At 0.09% ER, the active premium is modest vs the yield pickup over passive munis.", risk:"Lower-rated municipal credit. Liquidity can compress in risk-off environments." },
     "vteb":  { name:"Vanguard Tax-Exempt Bond ETF (VTEB)",             cat:"Municipal Bonds", scannable:true, duration:5.90, expense:0.05, tax:"Fed Tax-Exempt", desc:"Broad national investment-grade muni ETF at 0.05% ER. Best-in-class passive muni vehicle.", risk:"Underperforms if federal marginal rates decline. Interest rate risk at 5.9Y duration." },
     "mub":   { name:"iShares National Muni Bond ETF (MUB)",            cat:"Municipal Bonds", scannable:true, duration:6.00, expense:0.07, tax:"Fed Tax-Exempt", desc:"The benchmark national muni ETF with the deepest liquidity and tightest spreads.", risk:"0.07% ER vs VTEB's 0.05% — marginally higher cost for similar exposure." },
-    // ── Ultra-Short & Short Corporate Bonds ───────────────────────
-    "jpst":  { name:"JPMorgan Ultra-Short Income ETF (JPST)",          cat:"Ultra-Short & Short Corporate Bonds", scannable:true, duration:0.50, expense:0.18, tax:"Fully Taxable", desc:"Actively managed ultra-short corporate bond ETF delivering money-market-plus returns with low duration risk.", risk:"Corporate credit exposure vs government-only alternatives. Active management adds manager risk." },
-    "icsh":  { name:"iShares Ultra Short-Term Bond ETF (ICSH)",        cat:"Ultra-Short & Short Corporate Bonds", scannable:true, duration:0.45, expense:0.08, tax:"Fully Taxable", desc:"Passively managed ultra-short investment-grade bond ETF (<1Y). Covers high-quality corporate and government bonds. At 0.08% ER it is the lowest-cost option in the ultra-short corporate segment.", risk:"Investment-grade credit spreads can widen in stress — a modest but real risk vs pure Treasury alternatives. Near-zero duration minimizes rate sensitivity." },
-    "vcsh":  { name:"Vanguard Short-Term Corporate Bond ETF (VCSH)",    cat:"Ultra-Short & Short Corporate Bonds", scannable:true, duration:2.70, expense:0.04, tax:"Fully Taxable", desc:"1-5 year investment-grade corporate bond index at 0.04% ER. Excellent balance of yield pickup and duration control.", risk:"Credit spread widening in stress scenarios. Longer duration than JPST/ICSH — a 100bps move implies ~2.7% NAV impact." },
-    "igsb":  { name:"iShares Short-Term Corporate Bond ETF (IGSB)",     cat:"Ultra-Short & Short Corporate Bonds", scannable:true, duration:2.80, expense:0.06, tax:"Fully Taxable", desc:"Short-term IG corporate benchmark with broad issuer diversification.", risk:"0.06% ER vs VCSH's 0.04% for comparable exposure." },
-    "spsb":  { name:"SPDR Portfolio Short Term Corporate Bond (SPSB)",  cat:"Ultra-Short & Short Corporate Bonds", scannable:true, duration:2.70, expense:0.04, tax:"Fully Taxable", desc:"Low-cost short-term IG corporate ETF matching VCSH's ER at 0.04%.", risk:"Less AUM than VCSH; bid-ask spreads may be slightly wider." },
-    "bsv":   { name:"Vanguard Short-Term Bond ETF (BSV)",               cat:"Ultra-Short & Short Corporate Bonds", scannable:true, duration:2.70, expense:0.04, tax:"Fully Taxable", desc:"1-5 year blended short-term bond ETF (~70% government, ~30% corporate IG) at 0.04% ER. Offers lower credit risk than pure-corporate short-term ETFs due to government component.", risk:"Lower yield than VCSH/SPSB due to government weighting. Credit risk is minimal but non-zero. Duration ~2.7Y means a 100bps rate move implies ~2.7% NAV impact." },
+    // ── Ultra-Short & Short Corporate ────────────────────────────
+    "jpst":  { name:"JPMorgan Ultra-Short Income ETF (JPST)",          cat:"Ultra-Short Corporate Bonds", scannable:true, duration:0.50, expense:0.18, tax:"Fully Taxable", desc:"Actively managed ultra-short corporate bond ETF delivering money-market-plus returns with low duration risk.", risk:"Corporate credit exposure vs government-only alternatives. Active management adds manager risk." },
+    "vcsh":  { name:"Vanguard Short-Term Corporate Bond ETF (VCSH)",    cat:"Ultra-Short Corporate Bonds", scannable:true, duration:2.70, expense:0.04, tax:"Fully Taxable", desc:"1-5 year investment-grade corporate bond index at 0.04% ER. Excellent balance of yield pickup and duration control.", risk:"Credit spread widening in stress scenarios. Longer duration than JPST." },
+    "igsb":  { name:"iShares Short-Term Corporate Bond ETF (IGSB)",     cat:"Ultra-Short Corporate Bonds", scannable:true, duration:2.80, expense:0.06, tax:"Fully Taxable", desc:"Short-term IG corporate benchmark with broad issuer diversification.", risk:"0.06% ER vs VCSH's 0.04% for comparable exposure." },
+    "spsb":  { name:"SPDR Portfolio Short Term Corporate Bond (SPSB)",  cat:"Ultra-Short Corporate Bonds", scannable:true, duration:2.70, expense:0.04, tax:"Fully Taxable", desc:"Low-cost short-term IG corporate ETF matching VCSH's ER at 0.04%.", risk:"Less AUM than VCSH; bid-ask spreads may be slightly wider." },
     // ── Investment-Grade Corporate ────────────────────────────────
     "vcit":  { name:"Vanguard Intermediate Corporate Bond ETF (VCIT)",  cat:"Investment-Grade Corporate Bonds", scannable:true, duration:6.20,  expense:0.04, tax:"Fully Taxable", desc:"5-10 year IG corporate ladder at 0.04% ER. Cost-efficient core corporate allocation.", risk:"Credit spread and duration risk combined. Underperforms in spread-widening events." },
     "lqd":   { name:"iShares IG Corporate Bond ETF (LQD)",              cat:"Investment-Grade Corporate Bonds", scannable:true, duration:8.30,  expense:0.14, tax:"Fully Taxable", desc:"The deepest-liquidity IG corporate ETF with 5.22% gross yield.", risk:"8.3Y duration plus credit spread risk. 0.14% ER vs VCIT's 0.04% is notable." },
@@ -1316,265 +1240,40 @@ function getEffectiveYieldSignal(key) {
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// MARKET RATES SCANNER & FILTERS
+// MARKET RATES SCANNER
 // ═══════════════════════════════════════════════════════════════════
-let scannerState = {
-    search: '',
-    category: 'all',
-    source: 'all',
-    sortBy: 'default', // 'default', 'name', 'yield', 'source', 'updated', 'category'
-    sortDir: 'desc'    // 'desc', 'asc'
-};
-
-function initScannerCategoryOptions() {
-    const sel = document.getElementById('scannerCategoryFilter');
-    if (!sel || sel.options.length > 1) return;
-    
-    Object.keys(STRUCTURAL_CATEGORIES).forEach(cat => {
-        const opt = document.createElement('option');
-        opt.value = cat;
-        opt.textContent = cat;
-        sel.appendChild(opt);
-    });
-}
-
-function onScannerFilterChange() {
-    const searchEl = document.getElementById('scannerSearchInput');
-    const catEl = document.getElementById('scannerCategoryFilter');
-    const srcEl = document.getElementById('scannerSourceFilter');
-    const clearBtn = document.getElementById('btnClearScannerSearch');
-
-    if (searchEl) scannerState.search = searchEl.value.trim().toLowerCase();
-    if (catEl) scannerState.category = catEl.value;
-    if (srcEl) scannerState.source = srcEl.value;
-
-    if (clearBtn) {
-        if (scannerState.search.length > 0) clearBtn.classList.remove('hidden');
-        else clearBtn.classList.add('hidden');
-    }
-
-    renderMarketScanner();
-}
-
-function clearScannerSearch() {
-    const searchEl = document.getElementById('scannerSearchInput');
-    if (searchEl) searchEl.value = '';
-    onScannerFilterChange();
-}
-
-function onScannerSortChange(val) {
-    scannerState.sortBy = val;
-    if (val === 'yield') {
-        scannerState.sortDir = 'desc';
-    } else if (val === 'name' || val === 'category' || val === 'source') {
-        scannerState.sortDir = 'asc';
-    } else {
-        scannerState.sortDir = 'desc';
-    }
-    updateScannerSortDirUI();
-    renderMarketScanner();
-}
-
-function toggleScannerSortDir() {
-    scannerState.sortDir = scannerState.sortDir === 'asc' ? 'desc' : 'asc';
-    updateScannerSortDirUI();
-    renderMarketScanner();
-}
-
-function updateScannerSortDirUI() {
-    const label = document.getElementById('scannerSortDirLabel');
-    if (label) {
-        label.textContent = scannerState.sortDir === 'asc' ? '↑' : '↓';
-    }
-}
-
-function handleScannerHeaderClick(column) {
-    if (scannerState.sortBy === column) {
-        scannerState.sortDir = scannerState.sortDir === 'asc' ? 'desc' : 'asc';
-    } else {
-        scannerState.sortBy = column;
-        if (column === 'yield') scannerState.sortDir = 'desc';
-        else if (column === 'name' || column === 'source' || column === 'category') scannerState.sortDir = 'asc';
-        else scannerState.sortDir = 'desc';
-    }
-
-    const sortSelect = document.getElementById('scannerSortBy');
-    if (sortSelect) sortSelect.value = column;
-    
-    updateScannerSortDirUI();
-    renderMarketScanner();
-}
-
-function resetScannerFilters() {
-    scannerState = {
-        search: '',
-        category: 'all',
-        source: 'all',
-        sortBy: 'default',
-        sortDir: 'desc'
-    };
-
-    const searchEl = document.getElementById('scannerSearchInput');
-    const catEl = document.getElementById('scannerCategoryFilter');
-    const srcEl = document.getElementById('scannerSourceFilter');
-    const sortEl = document.getElementById('scannerSortBy');
-    const clearBtn = document.getElementById('btnClearScannerSearch');
-
-    if (searchEl) searchEl.value = '';
-    if (catEl) catEl.value = 'all';
-    if (srcEl) srcEl.value = 'all';
-    if (sortEl) sortEl.value = 'default';
-    if (clearBtn) clearBtn.classList.add('hidden');
-
-    updateScannerSortDirUI();
-    renderMarketScanner();
-}
-
 function renderMarketScanner() {
     const c = document.getElementById('marketScannerContainer');
     if (!c) return;
-    initScannerCategoryOptions();
-
-    // Update sort arrows on table header
-    ['name', 'yield', 'source', 'updated'].forEach(hdr => {
-        const el = document.getElementById(`hdrSort-${hdr}`);
-        if (el) {
-            if (scannerState.sortBy === hdr) {
-                el.textContent = scannerState.sortDir === 'asc' ? '▲' : '▼';
-            } else {
-                el.textContent = '';
-            }
-        }
-    });
-
-    let allItems = [];
-    Object.keys(STRUCTURAL_CATEGORIES).forEach((catName, catIdx) => {
+    c.innerHTML = '';
+    
+    Object.keys(STRUCTURAL_CATEGORIES).forEach(catName => {
         const keys = STRUCTURAL_CATEGORIES[catName];
-        keys.forEach((key, keyIdx) => {
+        keys.forEach(key => {
             const m = ASSETS_MANIFEST[key];
             if (!m) return;
             const ys = getEffectiveYieldSignal(key);
             let sourceBadge = '';
-            let sourceLabel = '';
-            if (ys.source === 'auction') {
-                sourceBadge = '<span class="text-[9px] px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-400 font-bold border border-emerald-200 dark:border-emerald-800">Treasury API</span>';
-                sourceLabel = 'Treasury API';
-            } else if (ys.source === 'manual') {
-                sourceBadge = '<span class="text-[9px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-400 font-bold border border-amber-200 dark:border-amber-800">User Tweak</span>';
-                sourceLabel = 'User Tweak';
-            } else if (ys.source === 'live') {
-                sourceBadge = '<span class="text-[9px] px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-400 font-bold border border-blue-200 dark:border-blue-800">Live Market</span>';
-                sourceLabel = 'Live Market';
-            } else {
-                sourceBadge = '<span class="text-[9px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400 font-bold border border-slate-200 dark:border-slate-700">Hardcoded (AI Researched)</span>';
-                sourceLabel = 'Hardcoded';
-            }
+            if (ys.source === 'auction') sourceBadge = '<span class="text-[9px] px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-400 font-bold border border-emerald-200 dark:border-emerald-800">Treasury API</span>';
+            else if (ys.source === 'manual') sourceBadge = '<span class="text-[9px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-400 font-bold border border-amber-200 dark:border-amber-800">User Tweak</span>';
+            else if (ys.source === 'live') sourceBadge = '<span class="text-[9px] px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-400 font-bold border border-blue-200 dark:border-blue-800">Live Market</span>';
+            else sourceBadge = '<span class="text-[9px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400 font-bold border border-slate-200 dark:border-slate-700">Hardcoded (AI Researched)</span>';
             
             const lastUpd = (ys.source === 'hardcoded' || ys.source === 'manual') ? 'Static' : (marketRateUpdates[key] || (ys.source === 'auction' ? liveAuctionSignals[key].auctionDate : 'Static'));
 
-            allItems.push({
-                key,
-                manifest: m,
-                catName,
-                name: m.name,
-                yield: ys.yield,
-                source: ys.source,
-                sourceLabel,
-                sourceBadge,
-                lastUpd,
-                defaultOrder: catIdx * 1000 + keyIdx
-            });
+            const div = document.createElement('div');
+            div.className = 'grid grid-cols-5 px-6 py-3 items-center hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors text-sm';
+            div.innerHTML = `
+                <div class="col-span-2">
+                    <div class="font-bold text-[11px] text-slate-800 dark:text-slate-200">${m.name}</div>
+                    <div class="text-[9px] text-slate-400 font-mono mt-0.5">${catName}</div>
+                </div>
+                <div class="text-right font-mono font-bold text-slate-900 dark:text-white">${ys.yield.toFixed(2)}%</div>
+                <div class="text-center flex justify-center">${sourceBadge}</div>
+                <div class="text-right text-[10px] text-slate-500 font-mono">${lastUpd}</div>
+            `;
+            c.appendChild(div);
         });
-    });
-
-    const totalCount = allItems.length;
-
-    // Filter items
-    let filtered = allItems.filter(item => {
-        if (scannerState.search) {
-            const q = scannerState.search;
-            const matchName = item.name.toLowerCase().includes(q);
-            const matchKey = item.key.toLowerCase().includes(q);
-            const matchCat = item.catName.toLowerCase().includes(q);
-            const matchDesc = (item.manifest.desc || '').toLowerCase().includes(q);
-            const matchTax = (item.manifest.tax || '').toLowerCase().includes(q);
-            if (!matchName && !matchKey && !matchCat && !matchDesc && !matchTax) {
-                return false;
-            }
-        }
-
-        if (scannerState.category !== 'all' && item.catName !== scannerState.category) {
-            return false;
-        }
-
-        if (scannerState.source !== 'all' && item.source !== scannerState.source) {
-            return false;
-        }
-
-        return true;
-    });
-
-    // Sort items
-    const dirMult = scannerState.sortDir === 'asc' ? 1 : -1;
-
-    filtered.sort((a, b) => {
-        if (scannerState.sortBy === 'yield') {
-            return (a.yield - b.yield) * dirMult;
-        } else if (scannerState.sortBy === 'name') {
-            return a.name.localeCompare(b.name) * dirMult;
-        } else if (scannerState.sortBy === 'category') {
-            const catCmp = a.catName.localeCompare(b.catName);
-            if (catCmp !== 0) return catCmp * dirMult;
-            return a.name.localeCompare(b.name) * dirMult;
-        } else if (scannerState.sortBy === 'source') {
-            const srcCmp = a.sourceLabel.localeCompare(b.sourceLabel);
-            if (srcCmp !== 0) return srcCmp * dirMult;
-            return (b.yield - a.yield) * dirMult;
-        } else if (scannerState.sortBy === 'updated') {
-            const updCmp = a.lastUpd.localeCompare(b.lastUpd);
-            if (updCmp !== 0) return updCmp * dirMult;
-            return (b.yield - a.yield) * dirMult;
-        } else {
-            // Default structural categories order
-            return (a.defaultOrder - b.defaultOrder) * (scannerState.sortDir === 'asc' ? -1 : 1);
-        }
-    });
-
-    // Update count badge
-    const badge = document.getElementById('scannerCountBadge');
-    if (badge) {
-        if (filtered.length === totalCount) {
-            badge.textContent = `${totalCount} Assets`;
-        } else {
-            badge.textContent = `${filtered.length} / ${totalCount} Assets`;
-        }
-    }
-
-    c.innerHTML = '';
-    if (filtered.length === 0) {
-        c.innerHTML = `
-            <div class="px-6 py-10 text-center text-slate-400 dark:text-slate-500 font-mono text-xs space-y-3">
-                <div class="text-sm font-bold text-slate-600 dark:text-slate-400">No matching market assets found</div>
-                <p class="text-[11px] text-slate-400 max-w-sm mx-auto">Try broadening your search query or resetting your category &amp; source filters.</p>
-                <button onclick="resetScannerFilters()" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-all shadow-sm">Reset Scanner Filters</button>
-            </div>
-        `;
-        return;
-    }
-
-    filtered.forEach(item => {
-        const div = document.createElement('div');
-        div.className = 'grid grid-cols-5 px-6 py-3 items-center hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors text-sm';
-        div.innerHTML = `
-            <div class="col-span-2">
-                <div class="font-bold text-[11px] text-slate-800 dark:text-slate-200">${item.name}</div>
-                <div class="text-[9px] text-slate-400 font-mono mt-0.5">${item.catName}</div>
-            </div>
-            <div class="text-right font-mono font-bold text-slate-900 dark:text-white">${item.yield.toFixed(2)}%</div>
-            <div class="text-center flex justify-center">${item.sourceBadge}</div>
-            <div class="text-right text-[10px] text-slate-500 font-mono">${item.lastUpd}</div>
-        `;
-        c.appendChild(div);
     });
 }
 
