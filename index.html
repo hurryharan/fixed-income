@@ -1132,6 +1132,7 @@ function buildForensicLogic(key, weights, autoWeights, manualWeights, jurisdicti
         case 'note_10y':   reason = `10Y Notes require a >36M horizon to justify held-to-maturity sovereign commitment. ETF wrappers (IEF/VGIT) preferred for liquid duration management.`; break;
         case 'bond_30y':   reason = `30Y Bond held-to-maturity commitment not active. TLT preferred if long-duration rate exposure is desired.`; break;
         case 'usfr':       reason = `USFR floating T-bill exposure not active in this profile configuration; front-end sovereign cash covered by primary sweep/SGOV.`; break;
+        case 'sgov':       reason = `SGOV (0-3M T-Bill ETF) not deployed in this configuration; front-end cash covered by primary sweep, USFR floating notes, or direct T-bills.`; break;
         case 'bil':        reason = `BIL (0.13% ER) is dominated by SGOV (0.09% ER) for 1-3M T-bill exposure. Functionally identical instruments; 4bps ER gap favors SGOV every time.`; break;
         case 'shv':        reason = `SHV (0.15% ER) covers 1-12M Treasuries but overlaps with both SGOV and SCHO at higher cost. It occupies a middle ground that SGOV + SCHO together cover more efficiently.`; break;
         case 'scho':       reason = `SCHO not selected in this configuration — short-Treasury allocation covered by VGSH/SGOV.`; break;
