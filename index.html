@@ -207,7 +207,36 @@
                 </div>
             </div>
             <div>
-                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">Risk Avoidance &amp; Constraint Preferences</label>
+                <div class="flex justify-between items-center mb-2">
+                    <label class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Risk Avoidance &amp; Constraint Preferences</label>
+                    <span id="settingsCurveBadge" class="text-[10px] font-mono font-bold px-2 py-0.5 rounded border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400">Curve Analyzing...</span>
+                </div>
+
+                <!-- Macro Yield Curve & Fed Rate Guidance Card -->
+                <div class="mb-3 p-3 bg-slate-50 dark:bg-slate-950 rounded-lg border border-slate-200 dark:border-slate-800 space-y-2 text-xs">
+                    <div class="flex items-center justify-between text-[11px] font-mono">
+                        <span class="text-slate-500 dark:text-slate-400 font-bold flex items-center gap-1.5">
+                            <span class="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
+                            Macro Yield Curve Context
+                        </span>
+                        <span id="settingsFedRateDisplay" class="text-slate-700 dark:text-slate-300 font-bold">Fed Target: ~3.63%</span>
+                    </div>
+                    <div id="settingsMacroGuidelineText" class="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed font-sans">
+                        Evaluating current curve slope (10Y-2Y) and short rates to provide risk recommendations...
+                    </div>
+                    
+                    <!-- Yield Curve Presets -->
+                    <div class="pt-2 border-t border-slate-200/60 dark:border-slate-800/60">
+                        <div class="text-[9px] uppercase font-mono font-bold text-slate-400 mb-1.5">Yield Curve &amp; Fed Rate Presets:</div>
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5 font-mono text-[10px]">
+                            <button type="button" onclick="applyMacroRiskPreset('auto')" class="px-2 py-1 bg-blue-100 hover:bg-blue-200 dark:bg-blue-900/50 dark:hover:bg-blue-800 text-blue-700 dark:text-blue-300 rounded font-bold transition-all border border-blue-300 dark:border-blue-700 text-center truncate" title="Automatically configures risks based on current live curve slope">⚡ Auto-Tune</button>
+                            <button type="button" onclick="applyMacroRiskPreset('cutting_cycle')" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded font-bold transition-all border border-slate-300 dark:border-slate-700 text-center truncate" title="Lock in 2Y-10Y sovereign duration before Fed rate cuts">Lock Duration</button>
+                            <button type="button" onclick="applyMacroRiskPreset('cash_maximizer')" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded font-bold transition-all border border-slate-300 dark:border-slate-700 text-center truncate" title="Capture high floating cash yields while curve is inverted/flat">Floating Cash</button>
+                            <button type="button" onclick="applyMacroRiskPreset('all_clear')" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded font-bold transition-all border border-slate-300 dark:border-slate-700 text-center truncate" title="Clear all risk restrictions">Unrestricted</button>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="grid grid-cols-2 gap-2 text-xs font-mono">
                     <label class="flex items-center gap-2 p-2.5 bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg cursor-pointer hover:border-blue-400 transition-colors select-none">
                         <input type="checkbox" id="riskAvoidDuration" onchange="saveRiskAvoidanceFromUI()" class="accent-blue-600 rounded w-4 h-4">
@@ -782,6 +811,7 @@ function executeAttributionMatrix() {
     else curveRegime = 'normal';
 
     logs.push(`[CURVE] Yield Curve Regime: ${curveRegime.toUpperCase()} | 3M: ${y3m.toFixed(2)}%, 2Y: ${y2y.toFixed(2)}%, 5Y: ${y5y.toFixed(2)}%, 10Y: ${y10y.toFixed(2)}% | 10Y-2Y Spread: ${slope10y2y >= 0 ? '+' : ''}${slope10y2y.toFixed(2)}%`);
+    updateMacroRiskGuidelinesUI(curveRegime, slope10y2y, y3m, y2y, y10y);
 
     // ── Liquidity Sweep ──────────────────────────────────────────
     const sweepAsset = targetJurisdiction === 'us-muni-optimized' ? 'vusxx' : 'spaxx';
@@ -2566,6 +2596,81 @@ function openForensicModal(key){
 function closeForensicModal(){
     const modal=document.getElementById('forensicModal');
     modal.classList.add('hidden');modal.classList.remove('flex');
+}
+
+function updateMacroRiskGuidelinesUI(curveRegime, slope10y2y, y3m, y2y, y10y) {
+    const badge = document.getElementById('settingsCurveBadge');
+    const fedDisplay = document.getElementById('settingsFedRateDisplay');
+    const textEl = document.getElementById('settingsMacroGuidelineText');
+    if (!badge || !textEl) return;
+
+    if (curveRegime === 'inverted') {
+        badge.textContent = `Inverted Curve (${slope10y2y >= 0 ? '+' : ''}${slope10y2y.toFixed(2)}%)`;
+        badge.className = 'text-[10px] font-mono font-bold px-2 py-0.5 rounded border border-rose-200 dark:border-rose-900/60 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400';
+        textEl.innerHTML = `<strong>Inverted Curve Regime (3M ${y3m.toFixed(2)}% > 10Y ${y10y.toFixed(2)}%):</strong> Front-end cash &amp; floating T-Bills (USFR/SGOV) offer superior risk-free yields without term risk. Intermediate &amp; long bonds suffer negative carry. <em>Recommendation: Keep 'Avoid Duration' checked unless anticipating imminent sharp rate cuts.</em>`;
+    } else if (curveRegime === 'flat') {
+        badge.textContent = `Flat Plateau (${slope10y2y >= 0 ? '+' : ''}${slope10y2y.toFixed(2)}%)`;
+        badge.className = 'text-[10px] font-mono font-bold px-2 py-0.5 rounded border border-amber-200 dark:border-amber-900/60 bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400';
+        textEl.innerHTML = `<strong>Flat Curve Transition (10Y-2Y Spread: ${slope10y2y.toFixed(2)}%):</strong> Term premium is compressed. The 2Y-5Y sweet spot and short IG credit offer optimal carry while preserving capital flexibility. <em>Recommendation: Balance floating cash with 2Y-5Y sovereign locks.</em>`;
+    } else {
+        badge.textContent = `Steepening / Normal (+${slope10y2y.toFixed(2)}%)`;
+        badge.className = 'text-[10px] font-mono font-bold px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-900/60 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400';
+        textEl.innerHTML = `<strong>Steepening / Normal Curve (10Y ${y10y.toFixed(2)}% > 2Y ${y2y.toFixed(2)}%):</strong> Positive term premium rewards locking in 5Y/10Y duration before Fed easing lowers cash rates. <em>Recommendation: Uncheck 'Avoid Duration' to capture duration capital appreciation during rate cuts.</em>`;
+    }
+
+    if (fedDisplay) {
+        fedDisplay.textContent = `Fed Baseline: 3.63% · 3M: ${y3m.toFixed(2)}%`;
+    }
+}
+
+function applyMacroRiskPreset(presetType) {
+    const y3m  = getEffectiveYieldSignal('t_bills_short').yield || getEffectiveYieldSignal('sgov').yield || 4.14;
+    const y2y  = getEffectiveYieldSignal('note_2y').yield || 4.11;
+    const y10y = getEffectiveYieldSignal('note_10y').yield || getEffectiveYieldSignal('ief').yield || 4.25;
+    const slope10y2y = y10y - y2y;
+    const isCurveInverted = slope10y2y < -0.05;
+
+    if (presetType === 'auto') {
+        if (isCurveInverted) {
+            riskAvoidancePreferences.duration = true;
+            riskAvoidancePreferences.credit = true;
+            riskAvoidancePreferences.illiquid = false;
+            riskAvoidancePreferences.foreign = true;
+        } else {
+            // Normal or Flat curve
+            riskAvoidancePreferences.duration = false;
+            riskAvoidancePreferences.credit = false;
+            riskAvoidancePreferences.illiquid = false;
+            riskAvoidancePreferences.foreign = true;
+        }
+    } else if (presetType === 'cutting_cycle') {
+        // Front-run rate cuts: allow duration (notes/bonds), avoid credit defaults & foreign FX
+        riskAvoidancePreferences.duration = false;
+        riskAvoidancePreferences.credit = true;
+        riskAvoidancePreferences.illiquid = false;
+        riskAvoidancePreferences.foreign = true;
+    } else if (presetType === 'cash_maximizer') {
+        // Maximize short-term floating yield: avoid duration & lockups
+        riskAvoidancePreferences.duration = true;
+        riskAvoidancePreferences.credit = false;
+        riskAvoidancePreferences.illiquid = true;
+        riskAvoidancePreferences.foreign = true;
+    } else if (presetType === 'all_clear') {
+        riskAvoidancePreferences.duration = false;
+        riskAvoidancePreferences.credit = false;
+        riskAvoidancePreferences.illiquid = false;
+        riskAvoidancePreferences.foreign = false;
+    }
+
+    // Sync UI checkboxes
+    const riskFields = ['duration', 'credit', 'illiquid', 'foreign'];
+    riskFields.forEach(r => {
+        const el = document.getElementById(`riskAvoid${r.charAt(0).toUpperCase() + r.slice(1)}`);
+        if (el) el.checked = riskAvoidancePreferences[r];
+    });
+
+    saveEngineCache();
+    executeAttributionMatrix();
 }
 
 function saveRiskAvoidanceFromUI() {
